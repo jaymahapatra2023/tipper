@@ -1,6 +1,7 @@
 import { prisma } from '@tipper/database';
 
-import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
+import { stripe } from '../config/stripe';
+import { BadRequestError, NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 
 export class StaffService {
   async getDashboard(userId: string) {
@@ -132,6 +133,50 @@ export class StaffService {
     ]);
 
     return { payouts, total, page, limit };
+  }
+
+  // Stripe Connect onboarding
+  async createStripeOnboardingLink(userId: string, returnUrl: string) {
+    if (!stripe) throw new BadRequestError('Stripe not configured');
+
+    const staffMember = await this.getStaffMember(userId);
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundError('User');
+
+    let accountId = staffMember.stripeAccountId;
+
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        email: user.email,
+        capabilities: {
+          transfers: { requested: true },
+        },
+      });
+      accountId = account.id;
+
+      await prisma.staffMember.update({
+        where: { id: staffMember.id },
+        data: { stripeAccountId: accountId },
+      });
+    }
+
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${returnUrl}?stripe=refresh`,
+      return_url: `${returnUrl}?stripe=complete`,
+      type: 'account_onboarding',
+    });
+
+    return { url: accountLink.url };
+  }
+
+  async getStripeOnboardingStatus(userId: string) {
+    const staffMember = await this.getStaffMember(userId);
+    return {
+      stripeAccountId: staffMember.stripeAccountId,
+      stripeOnboarded: staffMember.stripeOnboarded,
+    };
   }
 
   private async getStaffMember(userId: string) {

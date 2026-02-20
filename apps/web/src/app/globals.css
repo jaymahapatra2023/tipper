@@ -22,12 +22,37 @@
   --color-popover-foreground: #0a0a0a;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
+  --color-gold: #c9a84c;
+  --color-gold-foreground: #0f1b2d;
   --radius: 0.5rem;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
   body {
     @apply bg-background text-foreground;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
+  }
+
+  .theme-guest {
+    --color-background: #0f1b2d;
+    --color-foreground: #f0ece4;
+    --color-primary: #c9a84c;
+    --color-primary-foreground: #0f1b2d;
+    --color-secondary: #1a2744;
+    --color-secondary-foreground: #f0ece4;
+    --color-muted: #243352;
+    --color-muted-foreground: #94a3b8;
+    --color-accent: #1a2744;
+    --color-accent-foreground: #f0ece4;
+    --color-border: #2a3f5f;
+    --color-input: #2a3f5f;
+    --color-ring: #c9a84c;
+    --color-card: #1a2744;
+    --color-card-foreground: #f0ece4;
+    --color-popover: #1a2744;
+    --color-popover-foreground: #f0ece4;
+    color: var(--color-foreground);
+    background-color: var(--color-background);
   }
 }

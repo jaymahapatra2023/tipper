@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { QrCode, HandCoins, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
@@ -23,13 +24,15 @@ export default function HomePage() {
           <h2 className="text-4xl font-bold tracking-tight sm:text-6xl">
             Digital Tipping for Hotel Staff
           </h2>
-          <p className="mt-6 text-lg text-muted-foreground">
+          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
             Show your appreciation for hotel cleaning staff with easy, cashless tips. Scan the QR
             code in your room, choose an amount, and tip securely.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link href="/register">
-              <Button size="lg">Get Started</Button>
+              <Button variant="gold" size="xl">
+                Get Started
+              </Button>
             </Link>
             <Link href="/login">
               <Button variant="outline" size="lg">
@@ -41,29 +44,29 @@ export default function HomePage() {
 
         <div className="mt-20 grid max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3">
           <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary text-xl">
-              1
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <QrCode className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-lg font-semibold">Scan QR Code</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Find the QR code in your hotel room and scan it with your phone
             </p>
           </div>
           <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary text-xl">
-              2
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <HandCoins className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-lg font-semibold">Choose Amount</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Select a suggested amount or enter a custom tip
             </p>
           </div>
           <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary text-xl">
-              3
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <CreditCard className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-lg font-semibold">Pay Securely</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
               Pay with credit card, Apple Pay, or Google Pay via Stripe
             </p>
           </div>

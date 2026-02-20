@@ -61,6 +61,26 @@ router.put('/pool-opt-in', async (req: Request, res: Response, next: NextFunctio
   }
 });
 
+// Stripe Connect
+router.post('/stripe/onboard', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const returnUrl = req.body.returnUrl || process.env.NEXT_PUBLIC_APP_URL + '/staff-settings';
+    const result = await staffService.createStripeOnboardingLink(req.user!.userId, returnUrl);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/stripe/status', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await staffService.getStripeOnboardingStatus(req.user!.userId);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/payouts', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;

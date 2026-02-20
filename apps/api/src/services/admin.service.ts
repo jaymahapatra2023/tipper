@@ -4,7 +4,8 @@ import type { StaffCreateInput, RoomCreateInput, HotelSettingsInput } from '@tip
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
-import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
+import { stripe } from '../config/stripe';
+import { BadRequestError, NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 
 export class AdminService {
   async getHotel(userId: string) {
@@ -229,6 +230,57 @@ export class AdminService {
         count: d._count,
         total: d._sum.totalAmount ?? 0,
       })),
+    };
+  }
+
+  // Stripe Connect onboarding
+  async createStripeOnboardingLink(userId: string, returnUrl: string) {
+    if (!stripe) throw new BadRequestError('Stripe not configured');
+
+    const admin = await this.getHotelAdmin(userId);
+    const hotel = await prisma.hotel.findUnique({ where: { id: admin.hotelId } });
+    if (!hotel) throw new NotFoundError('Hotel');
+
+    let accountId = hotel.stripeAccountId;
+
+    if (!accountId) {
+      // Create a new Express Connect account for the hotel
+      const account = await stripe.accounts.create({
+        type: 'express',
+        email: hotel.email,
+        business_type: 'company',
+        company: { name: hotel.name },
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+      });
+      accountId = account.id;
+
+      await prisma.hotel.update({
+        where: { id: hotel.id },
+        data: { stripeAccountId: accountId },
+      });
+    }
+
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${returnUrl}?stripe=refresh`,
+      return_url: `${returnUrl}?stripe=complete`,
+      type: 'account_onboarding',
+    });
+
+    return { url: accountLink.url };
+  }
+
+  async getStripeOnboardingStatus(userId: string) {
+    const admin = await this.getHotelAdmin(userId);
+    const hotel = await prisma.hotel.findUnique({ where: { id: admin.hotelId } });
+    if (!hotel) throw new NotFoundError('Hotel');
+
+    return {
+      stripeAccountId: hotel.stripeAccountId,
+      stripeOnboarded: hotel.stripeOnboarded,
     };
   }
 

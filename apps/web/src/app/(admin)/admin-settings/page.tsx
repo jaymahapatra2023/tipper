@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,17 +19,38 @@ interface HotelData {
   poolingType: string | null;
 }
 
+interface StripeStatus {
+  stripeAccountId: string | null;
+  stripeOnboarded: boolean;
+}
+
 export default function AdminSettingsPage() {
+  const searchParams = useSearchParams();
   const [hotel, setHotel] = useState<HotelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
 
   useEffect(() => {
-    api.get<HotelData>('/admin/hotel').then((res) => {
-      if (res.success && res.data) setHotel(res.data);
+    Promise.all([
+      api.get<HotelData>('/admin/hotel'),
+      api.get<StripeStatus>('/admin/stripe/status'),
+    ]).then(([hotelRes, stripeRes]) => {
+      if (hotelRes.success && hotelRes.data) setHotel(hotelRes.data);
+      if (stripeRes.success && stripeRes.data) setStripeStatus(stripeRes.data);
       setLoading(false);
     });
   }, []);
+
+  // Re-fetch stripe status when returning from onboarding
+  useEffect(() => {
+    if (searchParams.get('stripe') === 'complete') {
+      api.get<StripeStatus>('/admin/stripe/status').then((res) => {
+        if (res.success && res.data) setStripeStatus(res.data);
+      });
+    }
+  }, [searchParams]);
 
   async function saveSettings() {
     if (!hotel) return;
@@ -45,12 +66,63 @@ export default function AdminSettingsPage() {
     setSaving(false);
   }
 
+  async function startStripeOnboarding() {
+    setStripeLoading(true);
+    const res = await api.post<{ url: string }>('/admin/stripe/onboard', {
+      returnUrl: window.location.origin + '/admin-settings',
+    });
+    if (res.success && res.data) {
+      window.location.href = res.data.url;
+    }
+    setStripeLoading(false);
+  }
+
   if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>;
   if (!hotel) return <div>Failed to load hotel settings</div>;
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Hotel Settings</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Stripe Connect</CardTitle>
+          <CardDescription>Connect your Stripe account to receive tip payments</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {stripeStatus?.stripeOnboarded ? (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-green-600 text-sm font-bold">
+                ✓
+              </div>
+              <div>
+                <p className="font-medium">Stripe account connected</p>
+                <p className="text-sm text-muted-foreground">
+                  Account ID: {stripeStatus.stripeAccountId}
+                </p>
+              </div>
+            </div>
+          ) : stripeStatus?.stripeAccountId ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Your Stripe account has been created but onboarding is not complete.
+              </p>
+              <Button onClick={startStripeOnboarding} disabled={stripeLoading}>
+                {stripeLoading ? 'Redirecting...' : 'Complete Stripe Onboarding'}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Connect a Stripe account to start receiving tip payments from guests.
+              </p>
+              <Button onClick={startStripeOnboarding} disabled={stripeLoading}>
+                {stripeLoading ? 'Redirecting...' : 'Connect Stripe Account'}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

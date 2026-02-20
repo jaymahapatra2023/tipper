@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
+import { prisma } from '@tipper/database';
 import { stripe } from '../config/stripe';
 import { env } from '../config/env';
 import { tipService } from '../services/tip.service';
@@ -34,6 +35,22 @@ router.post('/stripe', async (req: Request, res: Response, next: NextFunction) =
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object;
         await tipService.handlePaymentFailed(paymentIntent.id);
+        break;
+      }
+      case 'account.updated': {
+        const account = event.data.object;
+        if (account.charges_enabled && account.payouts_enabled) {
+          // Update hotel if this is a hotel Connect account
+          await prisma.hotel.updateMany({
+            where: { stripeAccountId: account.id, stripeOnboarded: false },
+            data: { stripeOnboarded: true },
+          });
+          // Update staff member if this is a staff Connect account
+          await prisma.staffMember.updateMany({
+            where: { stripeAccountId: account.id, stripeOnboarded: false },
+            data: { stripeOnboarded: true },
+          });
+        }
         break;
       }
       default:
