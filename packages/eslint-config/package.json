@@ -1,0 +1,18 @@
+{
+  "name": "@tipper/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./base": "./base.js",
+    "./nextjs": "./nextjs.js",
+    "./node": "./node.js"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "eslint-plugin-import": "^2.31.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

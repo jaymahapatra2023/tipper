@@ -1,0 +1,96 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/api';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+
+interface TipItem {
+  id: string;
+  roomNumber: string;
+  amount: number;
+  message?: string;
+  date: string;
+  tipMethod: string;
+}
+
+export default function StaffTipsPage() {
+  const [tips, setTips] = useState<TipItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    api.get<TipItem[]>(`/staff/tips?page=${page}&limit=20`).then((res) => {
+      if (res.success && res.data) {
+        setTips(res.data);
+        setTotal(res.meta?.total || 0);
+      }
+      setLoading(false);
+    });
+  }, [page]);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">My Tips</h1>
+
+      <Card>
+        <CardContent className="pt-6">
+          {loading ? (
+            <p className="text-center text-muted-foreground py-8">Loading...</p>
+          ) : tips.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">No tips received yet</p>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {tips.map((tip) => (
+                  <div
+                    key={tip.id}
+                    className="flex items-center justify-between border-b pb-4 last:border-0"
+                  >
+                    <div>
+                      <p className="font-medium">Room {tip.roomNumber}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(tip.date)} - {tip.tipMethod === 'per_day' ? 'Per Day' : 'Flat'}
+                      </p>
+                      {tip.message && (
+                        <p className="text-sm italic mt-1">&quot;{tip.message}&quot;</p>
+                      )}
+                    </div>
+                    <Badge variant="success">{formatCurrency(tip.amount)}</Badge>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-center mt-6">
+                <p className="text-sm text-muted-foreground">
+                  Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} of {total}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page === 1}
+                    onClick={() => setPage((p) => p - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page * 20 >= total}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

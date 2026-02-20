@@ -1,0 +1,305 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  guest
+  staff
+  hotel_admin
+  platform_admin
+}
+
+enum HotelStatus {
+  pending
+  approved
+  suspended
+}
+
+enum QrCodeStatus {
+  active
+  revoked
+}
+
+enum TipMethod {
+  per_day
+  flat
+}
+
+enum TipStatus {
+  pending
+  processing
+  succeeded
+  failed
+  refunded
+}
+
+enum PayoutStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+enum PoolingType {
+  equal
+  weighted
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String?   @map("password_hash")
+  name          String
+  role          UserRole  @default(guest)
+  isActive      Boolean   @default(true) @map("is_active")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  oauthAccounts OAuthAccount[]
+  staffMembers  StaffMember[]
+  hotelAdmins   HotelAdmin[]
+  tips          Tip[]          @relation("GuestTips")
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model OAuthAccount {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  provider     String
+  providerAccountId String @map("provider_account_id")
+  accessToken  String?  @map("access_token")
+  refreshToken String?  @map("refresh_token")
+  expiresAt    DateTime? @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("oauth_accounts")
+}
+
+model Hotel {
+  id                  String      @id @default(uuid())
+  name                String
+  address             String
+  city                String
+  state               String
+  zipCode             String      @map("zip_code")
+  country             String      @default("US")
+  phone               String
+  email               String
+  website             String?
+  status              HotelStatus @default(pending)
+  stripeAccountId     String?     @map("stripe_account_id")
+  stripeOnboarded     Boolean     @default(false) @map("stripe_onboarded")
+  suggestedAmounts    Int[]       @default([500, 1000, 1500]) @map("suggested_amounts")
+  minTipAmount        Int         @default(100) @map("min_tip_amount")
+  maxTipAmount        Int         @default(50000) @map("max_tip_amount")
+  currency            String      @default("usd")
+  poolingEnabled      Boolean     @default(false) @map("pooling_enabled")
+  poolingType         PoolingType? @map("pooling_type")
+  platformFeePercent  Float?      @map("platform_fee_percent")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  rooms        Room[]
+  staffMembers StaffMember[]
+  hotelAdmins  HotelAdmin[]
+  tips         Tip[]
+
+  @@map("hotels")
+}
+
+model HotelAdmin {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  hotelId   String   @map("hotel_id")
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hotelId])
+  @@map("hotel_admins")
+}
+
+model Room {
+  id         String   @id @default(uuid())
+  hotelId    String   @map("hotel_id")
+  roomNumber String   @map("room_number")
+  floor      Int
+  roomType   String?  @map("room_type")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  qrCodes     QrCode[]
+  assignments RoomAssignment[]
+  tips        Tip[]
+
+  @@unique([hotelId, roomNumber])
+  @@map("rooms")
+}
+
+model QrCode {
+  id        String       @id @default(uuid())
+  roomId    String       @map("room_id")
+  code      String       @unique
+  status    QrCodeStatus @default(active)
+  scanCount Int          @default(0) @map("scan_count")
+  createdAt DateTime     @default(now()) @map("created_at")
+  revokedAt DateTime?    @map("revoked_at")
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([code])
+  @@map("qr_codes")
+}
+
+model StaffMember {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  hotelId          String   @map("hotel_id")
+  stripeAccountId  String?  @map("stripe_account_id")
+  stripeOnboarded  Boolean  @default(false) @map("stripe_onboarded")
+  poolOptIn        Boolean  @default(false) @map("pool_opt_in")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hotel             Hotel             @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  assignments       RoomAssignment[]
+  tipDistributions  TipDistribution[]
+  payouts           Payout[]
+
+  @@unique([userId, hotelId])
+  @@map("staff_members")
+}
+
+model RoomAssignment {
+  id            String   @id @default(uuid())
+  staffMemberId String   @map("staff_member_id")
+  roomId        String   @map("room_id")
+  assignedDate  DateTime @map("assigned_date") @db.Date
+  isClaimed     Boolean  @default(false) @map("is_claimed")
+  claimedAt     DateTime? @map("claimed_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  staffMember StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, assignedDate])
+  @@map("room_assignments")
+}
+
+model Tip {
+  id                 String    @id @default(uuid())
+  hotelId            String    @map("hotel_id")
+  roomId             String    @map("room_id")
+  guestId            String?   @map("guest_id")
+  guestName          String?   @map("guest_name")
+  guestEmail         String?   @map("guest_email")
+  checkInDate        DateTime  @map("check_in_date") @db.Date
+  checkOutDate       DateTime  @map("check_out_date") @db.Date
+  tipMethod          TipMethod @map("tip_method")
+  amountPerDay       Int?      @map("amount_per_day")
+  totalAmount        Int       @map("total_amount")
+  platformFee        Int       @default(0) @map("platform_fee")
+  netAmount          Int       @default(0) @map("net_amount")
+  currency           String    @default("usd")
+  message            String?
+  stripePaymentIntentId String? @unique @map("stripe_payment_intent_id")
+  status             TipStatus @default(pending)
+  paidAt             DateTime? @map("paid_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  hotel        Hotel             @relation(fields: [hotelId], references: [id])
+  room         Room              @relation(fields: [roomId], references: [id])
+  guest        User?             @relation("GuestTips", fields: [guestId], references: [id])
+  distributions TipDistribution[]
+
+  @@index([hotelId, createdAt])
+  @@index([roomId, createdAt])
+  @@index([status])
+  @@map("tips")
+}
+
+model TipDistribution {
+  id            String   @id @default(uuid())
+  tipId         String   @map("tip_id")
+  staffMemberId String   @map("staff_member_id")
+  amount        Int
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tip         Tip         @relation(fields: [tipId], references: [id], onDelete: Cascade)
+  staffMember StaffMember @relation(fields: [staffMemberId], references: [id])
+
+  @@unique([tipId, staffMemberId])
+  @@map("tip_distributions")
+}
+
+model Payout {
+  id               String       @id @default(uuid())
+  staffMemberId    String       @map("staff_member_id")
+  amount           Int
+  currency         String       @default("usd")
+  stripeTransferId String?      @unique @map("stripe_transfer_id")
+  status           PayoutStatus @default(pending)
+  processedAt      DateTime?    @map("processed_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  staffMember StaffMember @relation(fields: [staffMemberId], references: [id])
+
+  @@index([staffMemberId, createdAt])
+  @@map("payouts")
+}
+
+model PlatformSettings {
+  id                      String   @id @default(uuid())
+  defaultPlatformFeePercent Float  @default(10) @map("default_platform_fee_percent")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("platform_settings")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}

@@ -1,0 +1,146 @@
+import { prisma } from '@tipper/database';
+
+import { NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
+
+export class StaffService {
+  async getDashboard(userId: string) {
+    const staffMember = await this.getStaffMember(userId);
+
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [totalEarnings, monthEarnings, recentTips, pendingAssignments] = await Promise.all([
+      prisma.tipDistribution.aggregate({
+        where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
+        _sum: { amount: true },
+      }),
+      prisma.tipDistribution.aggregate({
+        where: {
+          staffMemberId: staffMember.id,
+          tip: { status: 'succeeded' },
+          createdAt: { gte: startOfMonth },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.tipDistribution.findMany({
+        where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
+        include: { tip: { include: { room: { select: { roomNumber: true } } } } },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      prisma.roomAssignment.count({
+        where: { staffMemberId: staffMember.id, isClaimed: false },
+      }),
+    ]);
+
+    return {
+      totalEarnings: totalEarnings._sum.amount ?? 0,
+      periodEarnings: monthEarnings._sum.amount ?? 0,
+      tipCount: recentTips.length,
+      recentTips: recentTips.map((td) => ({
+        id: td.id,
+        roomNumber: td.tip.room.roomNumber,
+        amount: td.amount,
+        message: td.tip.message ?? undefined,
+        date: td.createdAt.toISOString(),
+      })),
+      pendingAssignments,
+    };
+  }
+
+  async getTips(userId: string, page = 1, limit = 20) {
+    const staffMember = await this.getStaffMember(userId);
+
+    const [tips, total] = await Promise.all([
+      prisma.tipDistribution.findMany({
+        where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
+        include: { tip: { include: { room: { select: { roomNumber: true } } } } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.tipDistribution.count({
+        where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
+      }),
+    ]);
+
+    return {
+      tips: tips.map((td) => ({
+        id: td.id,
+        roomNumber: td.tip.room.roomNumber,
+        amount: td.amount,
+        message: td.tip.message ?? undefined,
+        date: td.createdAt.toISOString(),
+        tipMethod: td.tip.tipMethod,
+      })),
+      total,
+      page,
+      limit,
+    };
+  }
+
+  async getAssignments(userId: string) {
+    const staffMember = await this.getStaffMember(userId);
+
+    return prisma.roomAssignment.findMany({
+      where: { staffMemberId: staffMember.id },
+      include: { room: { select: { roomNumber: true, floor: true } } },
+      orderBy: { assignedDate: 'desc' },
+    });
+  }
+
+  async claimAssignment(userId: string, assignmentId: string) {
+    const staffMember = await this.getStaffMember(userId);
+
+    const assignment = await prisma.roomAssignment.findUnique({
+      where: { id: assignmentId },
+    });
+
+    if (!assignment) throw new NotFoundError('Assignment');
+    if (assignment.staffMemberId !== staffMember.id) {
+      throw new ForbiddenError('Not your assignment');
+    }
+    if (assignment.isClaimed) {
+      throw new ConflictError('Assignment already claimed');
+    }
+
+    return prisma.roomAssignment.update({
+      where: { id: assignmentId },
+      data: { isClaimed: true, claimedAt: new Date() },
+    });
+  }
+
+  async updatePoolOptIn(userId: string, optIn: boolean) {
+    const staffMember = await this.getStaffMember(userId);
+    return prisma.staffMember.update({
+      where: { id: staffMember.id },
+      data: { poolOptIn: optIn },
+    });
+  }
+
+  async getPayouts(userId: string, page = 1, limit = 20) {
+    const staffMember = await this.getStaffMember(userId);
+
+    const [payouts, total] = await Promise.all([
+      prisma.payout.findMany({
+        where: { staffMemberId: staffMember.id },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.payout.count({ where: { staffMemberId: staffMember.id } }),
+    ]);
+
+    return { payouts, total, page, limit };
+  }
+
+  private async getStaffMember(userId: string) {
+    const staffMember = await prisma.staffMember.findFirst({
+      where: { userId, isActive: true },
+    });
+    if (!staffMember) throw new NotFoundError('Staff member');
+    return staffMember;
+  }
+}
+
+export const staffService = new StaffService();

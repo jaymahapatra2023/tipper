@@ -1,0 +1,78 @@
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+
+export default function HomePage() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <header className="border-b">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <h1 className="text-2xl font-bold text-primary">Tipper</h1>
+          <nav className="flex gap-4">
+            <Link href="/login">
+              <Button variant="ghost">Log In</Button>
+            </Link>
+            <Link href="/register">
+              <Button>Sign Up</Button>
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      <main className="flex flex-1 flex-col items-center justify-center px-4">
+        <div className="max-w-2xl text-center">
+          <h2 className="text-4xl font-bold tracking-tight sm:text-6xl">
+            Digital Tipping for Hotel Staff
+          </h2>
+          <p className="mt-6 text-lg text-muted-foreground">
+            Show your appreciation for hotel cleaning staff with easy, cashless tips. Scan the QR
+            code in your room, choose an amount, and tip securely.
+          </p>
+          <div className="mt-10 flex items-center justify-center gap-x-6">
+            <Link href="/register">
+              <Button size="lg">Get Started</Button>
+            </Link>
+            <Link href="/login">
+              <Button variant="outline" size="lg">
+                Hotel Admin Login
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-20 grid max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3">
+          <div className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary text-xl">
+              1
+            </div>
+            <h3 className="mt-4 text-lg font-semibold">Scan QR Code</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Find the QR code in your hotel room and scan it with your phone
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary text-xl">
+              2
+            </div>
+            <h3 className="mt-4 text-lg font-semibold">Choose Amount</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Select a suggested amount or enter a custom tip
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary text-xl">
+              3
+            </div>
+            <h3 className="mt-4 text-lg font-semibold">Pay Securely</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Pay with credit card, Apple Pay, or Google Pay via Stripe
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <footer className="border-t py-8 text-center text-sm text-muted-foreground">
+        <p>Tipper - Digital Tipping Platform</p>
+      </footer>
+    </div>
+  );
+}
