@@ -26,16 +26,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Try to get current user on mount
+    // Only attempt to fetch current user if we have a token
+    if (!api.hasToken()) {
+      setIsLoading(false);
+      return;
+    }
     api
       .get<User>('/auth/me')
       .then((res) => {
         if (res.success && res.data) {
           setUser(res.data);
         }
-        setIsLoading(false);
       })
-      .catch(() => setIsLoading(false));
+      .catch(() => {
+        // Token expired or invalid — clear it
+        api.setToken(null);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

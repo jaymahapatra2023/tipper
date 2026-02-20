@@ -9,6 +9,10 @@ class ApiClient {
     this.accessToken = token;
   }
 
+  hasToken(): boolean {
+    return this.accessToken !== null;
+  }
+
   private async request<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
