@@ -9,6 +9,8 @@ import {
   BarChart3,
   Download,
   ChevronDown,
+  Star,
+  Users,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
@@ -31,7 +33,11 @@ interface AnalyticsData {
   totalAmount: number;
   netAmount: number;
   averageTip: number;
+  averageRating?: number;
+  ratedTipCount?: number;
+  ratingDistribution?: { rating: number; count: number }[];
   tipsByRoom: { roomNumber: string; count: number; total: number }[];
+  tipsByStaff?: { staffName: string; count: number; total: number; averageRating?: number }[];
   tipsByDate: { date: string; count: number; total: number }[];
 }
 
@@ -124,7 +130,7 @@ export default function AdminAnalyticsPage() {
       ) : (
         data && (
           <>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-5">
               <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Total Tips</CardTitle>
@@ -175,7 +181,99 @@ export default function AdminAnalyticsPage() {
                   </p>
                 </CardContent>
               </Card>
+              <Card className="card-hover">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm text-muted-foreground">Average Rating</CardTitle>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">
+                    <Star className="h-4 w-4" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-bold tracking-tight">
+                    {data.averageRating != null
+                      ? `${Math.round(data.averageRating * 10) / 10}/5`
+                      : 'N/A'}
+                  </p>
+                  {data.ratedTipCount != null && data.ratedTipCount > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {data.ratedTipCount} rated tip{data.ratedTipCount !== 1 ? 's' : ''}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
+
+            {data.ratingDistribution && data.ratingDistribution.some((r) => r.count > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Rating Distribution</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {data.ratingDistribution.map((r) => {
+                      const maxCount = Math.max(
+                        ...(data.ratingDistribution?.map((d) => d.count) ?? [1]),
+                      );
+                      const pct = maxCount > 0 ? (r.count / maxCount) * 100 : 0;
+                      return (
+                        <div key={r.rating} className="flex items-center gap-3">
+                          <div className="flex items-center gap-1 w-12 justify-end">
+                            <span className="text-sm font-medium">{r.rating}</span>
+                            <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                          </div>
+                          <div className="flex-1 h-5 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-yellow-400 transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground w-8 text-right">
+                            {r.count}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {data.tipsByStaff && data.tipsByStaff.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tips by Staff</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-1">
+                    {data.tipsByStaff.map((s) => (
+                      <div
+                        key={s.staffName}
+                        className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{s.staffName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {s.count} tip{s.count !== 1 ? 's' : ''}
+                              {s.averageRating != null && (
+                                <span className="ml-2">
+                                  {s.averageRating}/5
+                                  <Star className="inline h-3 w-3 fill-yellow-400 text-yellow-400 ml-0.5 -mt-0.5" />
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-medium">{formatCurrency(s.total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

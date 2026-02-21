@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, MapPin, Palette, Upload, Trash2 } from 'lucide-react';
+import { ShieldCheck, MapPin, Palette, Upload, Trash2, MessageSquare, Plus, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,6 +30,7 @@ interface HotelData {
   logoUrl: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
+  feedbackTags: string[];
 }
 
 interface StripeStatus {
@@ -59,6 +60,9 @@ function AdminSettingsContent() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [brandingPrimary, setBrandingPrimary] = useState<string>('');
   const [brandingSecondary, setBrandingSecondary] = useState<string>('');
+  const [feedbackTags, setFeedbackTags] = useState<string[]>([]);
+  const [newTag, setNewTag] = useState('');
+  const [tagsSaving, setTagsSaving] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -72,6 +76,7 @@ function AdminSettingsContent() {
         setLogoPreview(hotelRes.data.logoUrl);
         setBrandingPrimary(hotelRes.data.primaryColor || '');
         setBrandingSecondary(hotelRes.data.secondaryColor || '');
+        setFeedbackTags(hotelRes.data.feedbackTags || []);
       }
       if (stripeRes.success && stripeRes.data) setStripeStatus(stripeRes.data);
       if (meRes.success && meRes.data) setMfaEnabled(meRes.data.mfaEnabled ?? false);
@@ -103,6 +108,7 @@ function AdminSettingsContent() {
       geofenceLatitude: hotel.geofenceLatitude,
       geofenceLongitude: hotel.geofenceLongitude,
       geofenceRadius: hotel.geofenceRadius,
+      feedbackTags: feedbackTags.length > 0 ? feedbackTags : undefined,
     });
     setSaving(false);
   }
@@ -412,6 +418,82 @@ function AdminSettingsContent() {
           <Button onClick={saveBranding} disabled={brandingSaving}>
             {brandingSaving ? 'Saving...' : 'Save Branding'}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden card-hover">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Guest Feedback Tags
+          </CardTitle>
+          <CardDescription>
+            Configure the feedback tags guests can select when rating their stay. If none are set,
+            default tags will be used.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {feedbackTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-sm"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => setFeedbackTags((prev) => prev.filter((t) => t !== tag))}
+                  className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+            {feedbackTags.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No custom tags configured. Default tags will be shown to guests.
+              </p>
+            )}
+          </div>
+          {feedbackTags.length < 10 && (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Add a tag..."
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                maxLength={50}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const trimmed = newTag.trim();
+                    if (trimmed && !feedbackTags.includes(trimmed)) {
+                      setFeedbackTags((prev) => [...prev, trimmed]);
+                      setNewTag('');
+                    }
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={!newTag.trim() || feedbackTags.includes(newTag.trim())}
+                onClick={() => {
+                  const trimmed = newTag.trim();
+                  if (trimmed && !feedbackTags.includes(trimmed)) {
+                    setFeedbackTags((prev) => [...prev, trimmed]);
+                    setNewTag('');
+                  }
+                }}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {feedbackTags.length}/10 tags. Press Enter or click + to add.
+          </p>
         </CardContent>
       </Card>
 

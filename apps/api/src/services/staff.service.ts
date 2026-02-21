@@ -10,39 +10,53 @@ export class StaffService {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [totalEarnings, monthEarnings, recentTips, pendingAssignments] = await Promise.all([
-      prisma.tipDistribution.aggregate({
-        where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
-        _sum: { amount: true },
-      }),
-      prisma.tipDistribution.aggregate({
-        where: {
-          staffMemberId: staffMember.id,
-          tip: { status: 'succeeded' },
-          createdAt: { gte: startOfMonth },
-        },
-        _sum: { amount: true },
-      }),
-      prisma.tipDistribution.findMany({
-        where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
-        include: { tip: { include: { room: { select: { roomNumber: true } } } } },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-      prisma.roomAssignment.count({
-        where: { staffMemberId: staffMember.id, isClaimed: false },
-      }),
-    ]);
+    const [totalEarnings, monthEarnings, recentTips, pendingAssignments, ratingAgg] =
+      await Promise.all([
+        prisma.tipDistribution.aggregate({
+          where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
+          _sum: { amount: true },
+        }),
+        prisma.tipDistribution.aggregate({
+          where: {
+            staffMemberId: staffMember.id,
+            tip: { status: 'succeeded' },
+            createdAt: { gte: startOfMonth },
+          },
+          _sum: { amount: true },
+        }),
+        prisma.tipDistribution.findMany({
+          where: { staffMemberId: staffMember.id, tip: { status: 'succeeded' } },
+          include: { tip: { include: { room: { select: { roomNumber: true } } } } },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        }),
+        prisma.roomAssignment.count({
+          where: { staffMemberId: staffMember.id, isClaimed: false },
+        }),
+        prisma.tip.aggregate({
+          where: {
+            status: 'succeeded',
+            rating: { not: null },
+            distributions: { some: { staffMemberId: staffMember.id } },
+          },
+          _avg: { rating: true },
+          _count: { rating: true },
+        }),
+      ]);
 
     return {
       totalEarnings: totalEarnings._sum.amount ?? 0,
       periodEarnings: monthEarnings._sum.amount ?? 0,
       tipCount: recentTips.length,
+      averageRating: ratingAgg._avg.rating ?? undefined,
+      ratedTipCount: ratingAgg._count.rating,
       recentTips: recentTips.map((td) => ({
         id: td.id,
         roomNumber: td.tip.room.roomNumber,
         amount: td.amount,
         message: td.tip.message ?? undefined,
+        rating: td.tip.rating ?? undefined,
+        feedbackTags: td.tip.feedbackTags.length > 0 ? td.tip.feedbackTags : undefined,
         date: td.createdAt.toISOString(),
       })),
       pendingAssignments,
@@ -71,6 +85,8 @@ export class StaffService {
         roomNumber: td.tip.room.roomNumber,
         amount: td.amount,
         message: td.tip.message ?? undefined,
+        rating: td.tip.rating ?? undefined,
+        feedbackTags: td.tip.feedbackTags.length > 0 ? td.tip.feedbackTags : undefined,
         date: td.createdAt.toISOString(),
         tipMethod: td.tip.tipMethod,
       })),

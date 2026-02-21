@@ -28,6 +28,16 @@ export const STRIPE_WEBHOOK_EVENTS = [
 
 export const MIN_PAYOUT_AMOUNT = 100; // $1.00 in cents
 
+export const DEFAULT_FEEDBACK_TAGS = [
+  'Spotless room',
+  'Friendly staff',
+  'Went above and beyond',
+  'Great attention to detail',
+  'Quick service',
+] as const;
+
+export const MAX_FEEDBACK_TAGS = 10;
+
 export const PAGINATION_DEFAULTS = {
   page: 1,
   limit: 20,

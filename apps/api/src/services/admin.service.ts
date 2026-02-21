@@ -286,29 +286,38 @@ export class AdminService {
       if (endDate) (where.paidAt as Record<string, unknown>).lte = new Date(endDate);
     }
 
-    const [overview, tipsByRoom, tipsByDate, locationVerifiedCount] = await Promise.all([
-      prisma.tip.aggregate({
-        where,
-        _count: true,
-        _sum: { totalAmount: true, netAmount: true },
-        _avg: { totalAmount: true },
-      }),
-      prisma.tip.groupBy({
-        by: ['roomId'],
-        where,
-        _count: true,
-        _sum: { totalAmount: true },
-      }),
-      prisma.tip.groupBy({
-        by: ['paidAt'],
-        where,
-        _count: true,
-        _sum: { totalAmount: true },
-      }),
-      prisma.tip.count({
-        where: { ...where, locationVerified: true },
-      }),
-    ]);
+    const [overview, tipsByRoom, tipsByDate, locationVerifiedCount, ratingAgg, ratingGroups] =
+      await Promise.all([
+        prisma.tip.aggregate({
+          where,
+          _count: true,
+          _sum: { totalAmount: true, netAmount: true },
+          _avg: { totalAmount: true, rating: true },
+        }),
+        prisma.tip.groupBy({
+          by: ['roomId'],
+          where,
+          _count: true,
+          _sum: { totalAmount: true },
+        }),
+        prisma.tip.groupBy({
+          by: ['paidAt'],
+          where,
+          _count: true,
+          _sum: { totalAmount: true },
+        }),
+        prisma.tip.count({
+          where: { ...where, locationVerified: true },
+        }),
+        prisma.tip.count({
+          where: { ...where, rating: { not: null } },
+        }),
+        prisma.tip.groupBy({
+          by: ['rating'],
+          where: { ...where, rating: { not: null } },
+          _count: true,
+        }),
+      ]);
 
     // Get room numbers for room analytics
     const roomIds = tipsByRoom.map((r) => r.roomId);
@@ -318,15 +327,65 @@ export class AdminService {
     });
     const roomMap = new Map(rooms.map((r) => [r.id, r.roomNumber]));
 
+    // Get tipsByStaff with avg ratings
+    const distributions = await prisma.tipDistribution.findMany({
+      where: { tip: where },
+      include: {
+        staffMember: { include: { user: { select: { name: true } } } },
+        tip: { select: { totalAmount: true, rating: true } },
+      },
+    });
+
+    const staffMap = new Map<
+      string,
+      { name: string; count: number; total: number; ratingSum: number; ratedCount: number }
+    >();
+    for (const d of distributions) {
+      const key = d.staffMemberId;
+      const existing = staffMap.get(key);
+      if (existing) {
+        existing.count++;
+        existing.total += d.tip.totalAmount;
+        if (d.tip.rating != null) {
+          existing.ratingSum += d.tip.rating;
+          existing.ratedCount++;
+        }
+      } else {
+        staffMap.set(key, {
+          name: d.staffMember.user.name,
+          count: 1,
+          total: d.tip.totalAmount,
+          ratingSum: d.tip.rating ?? 0,
+          ratedCount: d.tip.rating != null ? 1 : 0,
+        });
+      }
+    }
+
+    // Build rating distribution (5 → 1)
+    const ratingDistribution = [5, 4, 3, 2, 1].map((r) => ({
+      rating: r,
+      count: ratingGroups.find((g) => g.rating === r)?._count ?? 0,
+    }));
+
     return {
       totalTips: overview._count,
       totalAmount: overview._sum.totalAmount ?? 0,
       netAmount: overview._sum.netAmount ?? 0,
       averageTip: Math.round(overview._avg.totalAmount ?? 0),
+      averageRating: overview._avg.rating ?? undefined,
+      ratedTipCount: ratingAgg,
+      ratingDistribution,
       tipsByRoom: tipsByRoom.map((r) => ({
         roomNumber: roomMap.get(r.roomId) ?? 'Unknown',
         count: r._count,
         total: r._sum.totalAmount ?? 0,
+      })),
+      tipsByStaff: Array.from(staffMap.values()).map((s) => ({
+        staffName: s.name,
+        count: s.count,
+        total: s.total,
+        averageRating:
+          s.ratedCount > 0 ? Math.round((s.ratingSum / s.ratedCount) * 10) / 10 : undefined,
       })),
       tipsByDate: tipsByDate.map((d) => ({
         date: d.paidAt?.toISOString().split('T')[0] ?? 'Unknown',

@@ -98,6 +98,12 @@ export const hotelSettingsSchema = z.object({
   geofenceLatitude: z.number().min(-90).max(90).optional(),
   geofenceLongitude: z.number().min(-180).max(180).optional(),
   geofenceRadius: z.number().min(50).max(5000).optional(),
+  feedbackTags: z.array(z.string().min(1).max(50)).max(10).optional(),
+});
+
+export const tipFeedbackSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  feedbackTags: z.array(z.string().min(1).max(50)).max(10).optional(),
 });
 
 // Room schemas
@@ -305,3 +311,4 @@ export type FeedbackQueryInput = z.infer<typeof feedbackQuerySchema>;
 export type FeedbackUpdateInput = z.infer<typeof feedbackUpdateSchema>;
 export type NotificationQueryInput = z.infer<typeof notificationQuerySchema>;
 export type HotelBrandingInput = z.infer<typeof hotelBrandingSchema>;
+export type TipFeedbackInput = z.infer<typeof tipFeedbackSchema>;

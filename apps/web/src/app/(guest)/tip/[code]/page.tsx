@@ -6,7 +6,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { CheckCircle2, ShieldCheck, FileText, Mail, AlertTriangle, MapPin } from 'lucide-react';
+import {
+  CheckCircle2,
+  ShieldCheck,
+  FileText,
+  Mail,
+  AlertTriangle,
+  MapPin,
+  Star,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 import { stripePromise } from '@/lib/stripe';
 import { formatCurrency } from '@/lib/utils';
@@ -24,7 +32,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Controller } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TipStatus } from '@tipper/shared';
+import { TipStatus, DEFAULT_FEEDBACK_TAGS } from '@tipper/shared';
 import type { QrResolveResponse, TipConfirmation } from '@tipper/shared';
 
 const tipFormSchema = z.object({
@@ -156,6 +164,10 @@ export default function TipPage() {
     amount: number;
     receiptToken?: string;
   } | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackTags, setFeedbackTags] = useState<string[]>([]);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
   const form = useForm<TipFormData>({
     resolver: zodResolver(tipFormSchema),
@@ -385,6 +397,75 @@ export default function TipPage() {
                 </div>
               </CardContent>
             </Card>
+            {!feedbackSubmitted ? (
+              <Card>
+                <CardContent className="pt-6 space-y-4">
+                  <p className="text-sm font-medium text-center">How was the room service?</p>
+                  <div className="flex justify-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setFeedbackRating(star)}
+                        className="p-1 transition-transform hover:scale-110"
+                      >
+                        <Star
+                          className={`h-8 w-8 ${
+                            star <= feedbackRating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-muted-foreground/30'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {feedbackRating > 0 && (
+                    <>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {(hotelInfo?.feedbackTags ?? [...DEFAULT_FEEDBACK_TAGS]).map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() =>
+                              setFeedbackTags((prev) =>
+                                prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+                              )
+                            }
+                            className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                              feedbackTags.includes(tag)
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border text-muted-foreground hover:border-primary/50'
+                            }`}
+                          >
+                            {tag}
+                          </button>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="gold"
+                        className="w-full"
+                        disabled={feedbackSubmitting}
+                        onClick={async () => {
+                          if (!tipData?.receiptToken) return;
+                          setFeedbackSubmitting(true);
+                          await api.put(`/tips/receipt/${tipData.receiptToken}/feedback`, {
+                            rating: feedbackRating,
+                            feedbackTags: feedbackTags.length > 0 ? feedbackTags : undefined,
+                          });
+                          setFeedbackSubmitted(true);
+                          setFeedbackSubmitting(false);
+                        }}
+                      >
+                        {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                      </Button>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <p className="text-sm text-primary font-medium">Thanks for your feedback!</p>
+            )}
             {tipData?.receiptToken && (
               <a
                 href={`/receipt/${tipData.receiptToken}`}

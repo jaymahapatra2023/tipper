@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { CheckCircle2, Building2, DoorOpen, Calendar, Users, MessageSquare } from 'lucide-react';
+import {
+  CheckCircle2,
+  Building2,
+  DoorOpen,
+  Calendar,
+  Users,
+  MessageSquare,
+  Star,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -124,6 +132,40 @@ export default function ReceiptPage() {
                   <span className="ml-auto text-sm font-medium text-right italic">
                     &ldquo;{receipt.message}&rdquo;
                   </span>
+                </div>
+              )}
+              {receipt.rating != null && (
+                <div className="flex items-center gap-3 py-3">
+                  <Star className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground">Rating</span>
+                  <div className="ml-auto flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`h-4 w-4 ${
+                          s <= receipt.rating!
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-muted-foreground/30'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+              {receipt.feedbackTags && receipt.feedbackTags.length > 0 && (
+                <div className="flex items-start gap-3 py-3">
+                  <span className="w-4" />
+                  <span className="text-sm text-muted-foreground">Feedback</span>
+                  <div className="ml-auto flex flex-wrap justify-end gap-1">
+                    {receipt.feedbackTags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs text-primary"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

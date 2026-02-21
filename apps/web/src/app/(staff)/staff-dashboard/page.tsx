@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DollarSign, Clock, TrendingUp, DoorOpen, Receipt } from 'lucide-react';
+import { DollarSign, Clock, TrendingUp, DoorOpen, Receipt, Star } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -38,7 +38,7 @@ export default function StaffDashboardPage() {
         <p className="text-muted-foreground mt-1">Here&apos;s your earnings overview</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card className="overflow-hidden border-primary/20 bg-primary/5 card-hover">
           <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -64,6 +64,28 @@ export default function StaffDashboardPage() {
             <p className="text-3xl font-bold tracking-tight">
               {formatCurrency(dashboard.periodEarnings)}
             </p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Average Rating
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">
+              <Star className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tracking-tight">
+              {dashboard.averageRating != null
+                ? `${Math.round(dashboard.averageRating * 10) / 10}/5`
+                : 'N/A'}
+            </p>
+            {dashboard.ratedTipCount != null && dashboard.ratedTipCount > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                from {dashboard.ratedTipCount} rated tip{dashboard.ratedTipCount !== 1 ? 's' : ''}
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card className="card-hover">
@@ -111,7 +133,23 @@ export default function StaffDashboardPage() {
                       )}
                     </div>
                   </div>
-                  <Badge variant="success">{formatCurrency(tip.amount)}</Badge>
+                  <div className="flex items-center gap-2">
+                    {tip.rating != null && (
+                      <div className="flex gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`h-3 w-3 ${
+                              s <= tip.rating!
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-muted-foreground/20'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <Badge variant="success">{formatCurrency(tip.amount)}</Badge>
+                  </div>
                 </div>
               ))}
             </div>

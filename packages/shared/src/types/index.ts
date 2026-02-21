@@ -80,6 +80,7 @@ export interface QrResolveResponse {
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  feedbackTags?: string[];
 }
 
 export interface TipCreateRequest {
@@ -109,6 +110,8 @@ export interface StaffDashboard {
   totalEarnings: number;
   periodEarnings: number;
   tipCount: number;
+  averageRating?: number;
+  ratedTipCount?: number;
   recentTips: StaffTipView[];
   pendingAssignments: number;
 }
@@ -118,6 +121,8 @@ export interface StaffTipView {
   roomNumber: string;
   amount: number;
   message?: string;
+  rating?: number;
+  feedbackTags?: string[];
   date: string;
 }
 
@@ -125,8 +130,11 @@ export interface AdminAnalytics {
   totalTips: number;
   totalAmount: number;
   averageTip: number;
+  averageRating?: number;
+  ratedTipCount?: number;
+  ratingDistribution?: { rating: number; count: number }[];
   tipsByRoom: { roomNumber: string; count: number; total: number }[];
-  tipsByStaff: { staffName: string; count: number; total: number }[];
+  tipsByStaff: { staffName: string; count: number; total: number; averageRating?: number }[];
   tipsByDate: { date: string; count: number; total: number }[];
   locationVerifiedCount?: number;
   locationVerifiedPercent?: number;
@@ -205,4 +213,6 @@ export interface ReceiptData {
   paidAt: string;
   staffNames: string[];
   message?: string;
+  rating?: number;
+  feedbackTags?: string[];
 }

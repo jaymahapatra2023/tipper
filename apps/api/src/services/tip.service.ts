@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { prisma } from '@tipper/database';
-import type { TipCreateInput, ReceiptData } from '@tipper/shared';
+import type { TipCreateInput, TipFeedbackInput, ReceiptData } from '@tipper/shared';
 import { DEFAULT_PLATFORM_FEE_PERCENT } from '@tipper/shared';
 
 import { env } from '../config/env';
@@ -424,7 +424,29 @@ export class TipService {
       paidAt: (tip.paidAt ?? tip.createdAt).toISOString(),
       staffNames: tip.distributions.map((d) => d.staffMember.user.name),
       message: tip.message ?? undefined,
+      rating: tip.rating ?? undefined,
+      feedbackTags: tip.feedbackTags.length > 0 ? tip.feedbackTags : undefined,
     };
+  }
+
+  async submitFeedback(token: string, input: TipFeedbackInput) {
+    const tip = await prisma.tip.findUnique({
+      where: { receiptToken: token },
+    });
+
+    if (!tip) throw new NotFoundError('Tip');
+    if (tip.status !== 'succeeded') throw new BadRequestError('Tip has not been completed');
+    if (tip.rating != null) throw new BadRequestError('Feedback has already been submitted');
+
+    await prisma.tip.update({
+      where: { id: tip.id },
+      data: {
+        rating: input.rating,
+        feedbackTags: input.feedbackTags ?? [],
+      },
+    });
+
+    return { message: 'Feedback submitted successfully' };
   }
 }
 

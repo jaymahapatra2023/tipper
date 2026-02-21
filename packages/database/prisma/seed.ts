@@ -78,6 +78,13 @@ async function main() {
       poolingEnabled: false,
       primaryColor: '#c9a84c',
       secondaryColor: '#0f1b2d',
+      feedbackTags: [
+        'Spotless room',
+        'Friendly staff',
+        'Went above and beyond',
+        'Great attention to detail',
+        'Quick service',
+      ],
     },
   });
 
@@ -162,7 +169,7 @@ async function main() {
   }
 
   // Create a sample guest user
-  await prisma.user.create({
+  const guestUser = await prisma.user.create({
     data: {
       email: 'guest@example.com',
       passwordHash: await hashPassword('Guest123!'),
@@ -171,6 +178,72 @@ async function main() {
       emailVerified: true,
     },
   });
+
+  // Create sample tips with ratings for analytics
+  const sampleTips = [
+    {
+      roomIdx: 0,
+      amount: 1000,
+      rating: 5,
+      tags: ['Spotless room', 'Friendly staff'],
+      message: 'Excellent service!',
+    },
+    {
+      roomIdx: 2,
+      amount: 1500,
+      rating: 4,
+      tags: ['Great attention to detail'],
+      message: 'Very clean room',
+    },
+    {
+      roomIdx: 5,
+      amount: 500,
+      rating: 5,
+      tags: ['Went above and beyond', 'Quick service'],
+      message: null,
+    },
+    { roomIdx: 8, amount: 2000, rating: 3, tags: [], message: 'Good overall' },
+    { roomIdx: 1, amount: 800, rating: null, tags: [], message: null },
+  ];
+
+  for (const st of sampleTips) {
+    const receiptToken = randomBytes(24).toString('hex');
+    const paidAt = new Date();
+    paidAt.setDate(paidAt.getDate() - Math.floor(Math.random() * 7));
+
+    const tip = await prisma.tip.create({
+      data: {
+        hotelId: hotel.id,
+        roomId: rooms[st.roomIdx].id,
+        guestId: guestUser.id,
+        guestName: 'John Doe',
+        guestEmail: 'guest@example.com',
+        checkInDate: new Date(paidAt.getTime() - 3 * 86400000),
+        checkOutDate: paidAt,
+        tipMethod: 'flat',
+        totalAmount: st.amount,
+        platformFee: Math.round(st.amount * 0.1),
+        netAmount: st.amount - Math.round(st.amount * 0.1),
+        currency: 'usd',
+        message: st.message,
+        rating: st.rating,
+        feedbackTags: st.tags,
+        status: 'succeeded',
+        receiptToken,
+        paidAt,
+      },
+    });
+
+    // Distribute to the assigned staff member
+    const staffIdx = st.roomIdx % staffMembers.length;
+    await prisma.tipDistribution.create({
+      data: {
+        tipId: tip.id,
+        staffMemberId: staffMembers[staffIdx].id,
+        amount: tip.netAmount,
+      },
+    });
+  }
 
   console.log('Seed completed!');
   console.log(`  - Platform admin: admin@tipper.app / Admin123!`);

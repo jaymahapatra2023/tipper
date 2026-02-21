@@ -29,6 +29,7 @@ export class QrService {
                 logoUrl: true,
                 primaryColor: true,
                 secondaryColor: true,
+                feedbackTags: true,
               },
             },
           },
@@ -67,6 +68,8 @@ export class QrService {
       logoUrl: qrCode.room.hotel.logoUrl ?? undefined,
       primaryColor: qrCode.room.hotel.primaryColor ?? undefined,
       secondaryColor: qrCode.room.hotel.secondaryColor ?? undefined,
+      feedbackTags:
+        qrCode.room.hotel.feedbackTags.length > 0 ? qrCode.room.hotel.feedbackTags : undefined,
     };
   }
 

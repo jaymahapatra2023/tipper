@@ -122,6 +122,7 @@ model Hotel {
   logoUrl             String?     @map("logo_url")
   primaryColor        String?     @map("primary_color")
   secondaryColor      String?     @map("secondary_color")
+  feedbackTags        String[]    @default([]) @map("feedback_tags")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
 
@@ -234,6 +235,8 @@ model Tip {
   netAmount          Int       @default(0) @map("net_amount")
   currency           String    @default("usd")
   message            String?
+  rating             Int?
+  feedbackTags       String[]  @default([]) @map("feedback_tags")
   guestLatitude      Float?    @map("guest_latitude")
   guestLongitude     Float?    @map("guest_longitude")
   guestLocationAccuracy Float? @map("guest_location_accuracy")

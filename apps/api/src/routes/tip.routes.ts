@@ -5,7 +5,7 @@ import { tipService } from '../services/tip.service';
 import { validate } from '../middleware/validate';
 import { tipLimiter } from '../middleware/rateLimiter';
 import { sendSuccess } from '../utils/response';
-import { tipCreateSchema, tipReceiptSchema } from '@tipper/shared';
+import { tipCreateSchema, tipReceiptSchema, tipFeedbackSchema } from '@tipper/shared';
 
 const router: Router = Router();
 
@@ -31,6 +31,19 @@ router.get('/receipt/:token', async (req: Request, res: Response, next: NextFunc
     next(err);
   }
 });
+
+router.put(
+  '/receipt/:token/feedback',
+  validate(tipFeedbackSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await tipService.submitFeedback(req.params.token as string, req.body);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get('/:id/status', async (req: Request, res: Response, next: NextFunction) => {
   try {
