@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Receipt, DollarSign, TrendingUp, DoorOpen, ArrowRight } from 'lucide-react';
+import { Receipt, DollarSign, TrendingUp, DoorOpen, ArrowRight, Clock } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -22,7 +22,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { AdminAnalytics } from '@tipper/shared';
+import type { AdminAnalytics, OnShiftNowEntry } from '@tipper/shared';
+import { Badge } from '@/components/ui/badge';
 
 const CHART_COLORS = [
   '#3b82f6',
@@ -167,10 +168,12 @@ function StaffBarTooltip({
 export default function AdminDashboardPage() {
   const t = useTranslations('admin');
   const locale = useLocale();
+  const ts = useTranslations('shifts');
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [hotel, setHotel] = useState<HotelInfo | null>(null);
   const [staffCount, setStaffCount] = useState<number | null>(null);
   const [roomCount, setRoomCount] = useState<number | null>(null);
+  const [onShiftNow, setOnShiftNow] = useState<OnShiftNowEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -179,11 +182,13 @@ export default function AdminDashboardPage() {
       api.get<HotelInfo>('/admin/hotel'),
       api.get<{ id: string }[]>('/admin/staff'),
       api.get<{ id: string }[]>('/admin/rooms'),
-    ]).then(([analyticsRes, hotelRes, staffRes, roomsRes]) => {
+      api.get<OnShiftNowEntry[]>('/shifts/admin/on-shift-now'),
+    ]).then(([analyticsRes, hotelRes, staffRes, roomsRes, onShiftRes]) => {
       if (analyticsRes.success && analyticsRes.data) setAnalytics(analyticsRes.data);
       if (hotelRes.success && hotelRes.data) setHotel(hotelRes.data);
       if (staffRes.success && staffRes.data) setStaffCount(staffRes.data.length);
       if (roomsRes.success && roomsRes.data) setRoomCount(roomsRes.data.length);
+      if (onShiftRes.success && onShiftRes.data) setOnShiftNow(onShiftRes.data);
       setLoading(false);
     });
   }, []);
@@ -287,6 +292,50 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* On Shift Now Widget */}
+      {onShiftNow.length > 0 && (
+        <Card className="overflow-hidden card-hover border-emerald-200">
+          <div className="h-0.5 bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-400" />
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Clock className="h-4 w-4 text-emerald-600" />
+              {ts('onShiftNow')}
+              <Badge variant="success" className="ml-1">
+                {onShiftNow.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              {onShiftNow.map((entry) => (
+                <div
+                  key={entry.shiftId}
+                  className="flex items-center justify-between rounded-lg px-3 py-2 even:bg-muted/30"
+                >
+                  <div>
+                    <p className="font-medium text-sm">{entry.staffName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.rooms.map((r) => r.roomNumber).join(', ')}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(entry.startTime).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}{' '}
+                    –{' '}
+                    {new Date(entry.endTime).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Revenue Trend — Compact Area Chart */}
       {dateData.length > 0 && (

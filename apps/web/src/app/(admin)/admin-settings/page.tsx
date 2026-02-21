@@ -13,6 +13,7 @@ import {
   X,
   Trophy,
   Weight,
+  Globe,
 } from 'lucide-react';
 import type { PoolDistributionPreview } from '@tipper/shared';
 import { useTranslations } from 'next-intl';
@@ -47,6 +48,7 @@ interface HotelData {
   feedbackTags: string[];
   leaderboardEnabled: boolean;
   leaderboardAnonymized: boolean;
+  timezone: string;
 }
 
 interface StripeStatus {
@@ -65,6 +67,7 @@ export default function AdminSettingsPage() {
 function AdminSettingsContent() {
   const t = useTranslations('admin');
   const tc = useTranslations('common');
+  const ts = useTranslations('shifts');
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -136,6 +139,7 @@ function AdminSettingsContent() {
       feedbackTags: feedbackTags.length > 0 ? feedbackTags : undefined,
       leaderboardEnabled: hotel.leaderboardEnabled,
       leaderboardAnonymized: hotel.leaderboardAnonymized,
+      timezone: hotel.timezone,
     });
     setSaving(false);
   }
@@ -758,6 +762,44 @@ function AdminSettingsContent() {
               <p className="text-xs text-muted-foreground">{t('coordsHint')}</p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden card-hover">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Globe className="h-5 w-5" />
+            {ts('timezone')}
+          </CardTitle>
+          <CardDescription>{ts('timezoneDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <select
+            className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm"
+            value={hotel.timezone ?? 'America/New_York'}
+            onChange={(e) => setHotel({ ...hotel, timezone: e.target.value })}
+          >
+            {[
+              'America/New_York',
+              'America/Chicago',
+              'America/Denver',
+              'America/Los_Angeles',
+              'America/Anchorage',
+              'Pacific/Honolulu',
+              'Europe/London',
+              'Europe/Paris',
+              'Europe/Berlin',
+              'Asia/Tokyo',
+              'Asia/Shanghai',
+              'Asia/Dubai',
+              'Australia/Sydney',
+            ].map((tz) => (
+              <option key={tz} value={tz}>
+                {tz}
+              </option>
+            ))}
+          </select>
         </CardContent>
       </Card>
 

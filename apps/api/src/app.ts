@@ -17,6 +17,7 @@ import { webhookRoutes } from './routes/webhook.routes';
 import { payoutRoutes } from './routes/payout.routes';
 import { feedbackRoutes } from './routes/feedback.routes';
 import { notificationRoutes } from './routes/notification.routes';
+import { shiftRoutes } from './routes/shift.routes';
 
 const app: Express = express();
 
@@ -57,6 +58,7 @@ app.use('/api/v1/platform', platformRoutes);
 app.use('/api/v1/platform/payouts', payoutRoutes);
 app.use('/api/v1/feedback', feedbackRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/shifts', shiftRoutes);
 
 // Error handler
 app.use(errorHandler);

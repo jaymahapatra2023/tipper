@@ -9,6 +9,7 @@ import { emailService } from './email.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { verifyGeofence } from '../utils/geolocation';
 import { notificationService } from './notification.service';
+import { shiftService } from './shift.service';
 
 export class TipService {
   async createTip(input: TipCreateInput) {
@@ -210,7 +211,16 @@ export class TipService {
       include: { staffMember: true },
     });
 
-    if (assignments.length === 0) return;
+    // Fallback to shift-based attribution if no room assignments exist
+    let staffIds: string[];
+    if (assignments.length > 0) {
+      staffIds = [...new Set(assignments.map((a) => a.staffMemberId))];
+    } else {
+      // Try finding staff on shift for this room during the tip period
+      const midStay = new Date((tip.checkInDate.getTime() + tip.checkOutDate.getTime()) / 2);
+      staffIds = await shiftService.findStaffOnShift(tip.hotelId, tip.roomId, midStay);
+      if (staffIds.length === 0) return;
+    }
 
     if (tip.hotel.poolingEnabled) {
       // Pool among opted-in staff
@@ -260,16 +270,15 @@ export class TipService {
         }
       }
     } else {
-      // Direct to assigned staff
-      const uniqueStaff = [...new Set(assignments.map((a) => a.staffMemberId))];
-      const perPerson = Math.floor(tip.netAmount / uniqueStaff.length);
-      const remainder = tip.netAmount - perPerson * uniqueStaff.length;
+      // Direct to assigned/on-shift staff
+      const perPerson = Math.floor(tip.netAmount / staffIds.length);
+      const remainder = tip.netAmount - perPerson * staffIds.length;
 
-      for (let i = 0; i < uniqueStaff.length; i++) {
+      for (let i = 0; i < staffIds.length; i++) {
         await prisma.tipDistribution.create({
           data: {
             tipId,
-            staffMemberId: uniqueStaff[i],
+            staffMemberId: staffIds[i],
             amount: perPerson + (i === 0 ? remainder : 0),
           },
         });

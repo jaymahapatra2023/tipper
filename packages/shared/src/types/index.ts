@@ -241,6 +241,88 @@ export interface StaffPerformanceResponse {
   leaderboard?: LeaderboardEntry[];
 }
 
+export enum ShiftStatus {
+  SCHEDULED = 'scheduled',
+  IN_PROGRESS = 'in_progress',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+export enum SwapRequestStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  CANCELLED = 'cancelled',
+}
+
+export enum DayOfWeek {
+  MONDAY = 'monday',
+  TUESDAY = 'tuesday',
+  WEDNESDAY = 'wednesday',
+  THURSDAY = 'thursday',
+  FRIDAY = 'friday',
+  SATURDAY = 'saturday',
+  SUNDAY = 'sunday',
+}
+
+export interface ShiftView {
+  id: string;
+  staffMemberId: string;
+  staffName: string;
+  hotelId: string;
+  startTime: string;
+  endTime: string;
+  status: ShiftStatus;
+  notes?: string;
+  rooms: { id: string; roomNumber: string }[];
+  createdAt: string;
+}
+
+export interface OnShiftNowEntry {
+  staffMemberId: string;
+  staffName: string;
+  shiftId: string;
+  startTime: string;
+  endTime: string;
+  rooms: { id: string; roomNumber: string }[];
+}
+
+export interface ShiftTemplateView {
+  id: string;
+  name: string;
+  isActive: boolean;
+  entries: ShiftTemplateEntryView[];
+  createdAt: string;
+}
+
+export interface ShiftTemplateEntryView {
+  id: string;
+  staffMemberId: string;
+  staffName: string;
+  dayOfWeek: DayOfWeek;
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+  roomIds: string[];
+}
+
+export interface ShiftSwapRequestView {
+  id: string;
+  originalShiftId: string;
+  requesterName: string;
+  requesterId: string;
+  targetStaffName?: string;
+  targetStaffId?: string;
+  swapShiftId?: string;
+  status: SwapRequestStatus;
+  reason?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdAt: string;
+  originalShift: ShiftView;
+}
+
 export interface PoolDistributionPreview {
   staffMemberId: string;
   staffName: string;

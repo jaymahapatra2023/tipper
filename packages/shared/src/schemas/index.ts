@@ -102,6 +102,7 @@ export const hotelSettingsSchema = z.object({
   leaderboardEnabled: z.boolean().optional(),
   leaderboardAnonymized: z.boolean().optional(),
   defaultGuestLocale: z.enum(['en', 'es', 'fr']).optional(),
+  timezone: z.string().max(50).optional(),
 });
 
 export const tipFeedbackSchema = z.object({
@@ -309,6 +310,106 @@ export const staffWeightUpdateSchema = z.object({
   poolWeight: z.number().min(0.1).max(10),
 });
 
+// Shift schemas
+export const shiftCreateSchema = z
+  .object({
+    staffMemberId: z.string().uuid(),
+    startTime: z.string().refine((d) => !isNaN(Date.parse(d)), 'Invalid date'),
+    endTime: z.string().refine((d) => !isNaN(Date.parse(d)), 'Invalid date'),
+    roomIds: z.array(z.string().uuid()).min(1, 'At least one room is required'),
+    notes: z.string().max(500).optional(),
+  })
+  .refine((data) => new Date(data.endTime) > new Date(data.startTime), {
+    message: 'End time must be after start time',
+    path: ['endTime'],
+  });
+
+export const shiftUpdateSchema = z
+  .object({
+    staffMemberId: z.string().uuid().optional(),
+    startTime: z
+      .string()
+      .refine((d) => !isNaN(Date.parse(d)), 'Invalid date')
+      .optional(),
+    endTime: z
+      .string()
+      .refine((d) => !isNaN(Date.parse(d)), 'Invalid date')
+      .optional(),
+    roomIds: z.array(z.string().uuid()).min(1).optional(),
+    notes: z.string().max(500).optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.startTime && data.endTime) {
+        return new Date(data.endTime) > new Date(data.startTime);
+      }
+      return true;
+    },
+    { message: 'End time must be after start time', path: ['endTime'] },
+  );
+
+export const shiftQuerySchema = z.object({
+  date: z
+    .string()
+    .refine((d) => !isNaN(Date.parse(d)), 'Invalid date')
+    .optional(),
+  startDate: z
+    .string()
+    .refine((d) => !isNaN(Date.parse(d)), 'Invalid date')
+    .optional(),
+  endDate: z
+    .string()
+    .refine((d) => !isNaN(Date.parse(d)), 'Invalid date')
+    .optional(),
+  staffMemberId: z.string().uuid().optional(),
+  status: z.enum(['scheduled', 'in_progress', 'completed', 'cancelled']).optional(),
+});
+
+export const shiftStatusUpdateSchema = z.object({
+  status: z.enum(['in_progress', 'completed']),
+});
+
+// Shift template schemas
+export const templateEntrySchema = z.object({
+  staffMemberId: z.string().uuid(),
+  dayOfWeek: z.enum(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
+  startHour: z.number().int().min(0).max(23),
+  startMinute: z.number().int().min(0).max(59).default(0),
+  endHour: z.number().int().min(0).max(23),
+  endMinute: z.number().int().min(0).max(59).default(0),
+  roomIds: z.array(z.string().uuid()).default([]),
+});
+
+export const templateCreateSchema = z.object({
+  name: z.string().min(1).max(100),
+  entries: z.array(templateEntrySchema).min(1, 'At least one entry is required'),
+});
+
+export const templateApplySchema = z
+  .object({
+    startDate: z.string().refine((d) => !isNaN(Date.parse(d)), 'Invalid date'),
+    endDate: z.string().refine((d) => !isNaN(Date.parse(d)), 'Invalid date'),
+  })
+  .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+    message: 'End date must be on or after start date',
+    path: ['endDate'],
+  });
+
+// Swap schemas
+export const swapRequestSchema = z.object({
+  originalShiftId: z.string().uuid(),
+  targetStaffId: z.string().uuid().optional(),
+  reason: z.string().max(500).optional(),
+});
+
+export const swapRespondSchema = z.object({
+  swapShiftId: z.string().uuid().optional(),
+});
+
+export const swapReviewSchema = z.object({
+  status: z.enum(['approved', 'rejected']),
+});
+
 // Type exports from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -333,3 +434,12 @@ export type NotificationQueryInput = z.infer<typeof notificationQuerySchema>;
 export type HotelBrandingInput = z.infer<typeof hotelBrandingSchema>;
 export type TipFeedbackInput = z.infer<typeof tipFeedbackSchema>;
 export type StaffWeightUpdateInput = z.infer<typeof staffWeightUpdateSchema>;
+export type ShiftCreateInput = z.infer<typeof shiftCreateSchema>;
+export type ShiftUpdateInput = z.infer<typeof shiftUpdateSchema>;
+export type ShiftQueryInput = z.infer<typeof shiftQuerySchema>;
+export type ShiftStatusUpdateInput = z.infer<typeof shiftStatusUpdateSchema>;
+export type TemplateCreateInput = z.infer<typeof templateCreateSchema>;
+export type TemplateApplyInput = z.infer<typeof templateApplySchema>;
+export type SwapRequestInput = z.infer<typeof swapRequestSchema>;
+export type SwapRespondInput = z.infer<typeof swapRespondSchema>;
+export type SwapReviewInput = z.infer<typeof swapReviewSchema>;
