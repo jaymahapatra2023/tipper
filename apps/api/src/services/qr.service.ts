@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { prisma } from '@tipper/database';
 import { QR_CODE_LENGTH } from '@tipper/shared';
 
+import { logAudit } from '../utils/audit';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 
 export class QrService {
@@ -88,8 +89,17 @@ export class QrService {
     return { qrCode, url, qrImage };
   }
 
-  async regenerate(roomId: string, appUrl: string) {
-    return this.generateForRoom(roomId, appUrl);
+  async regenerate(roomId: string, appUrl: string, userId?: string, ipAddress?: string) {
+    const result = await this.generateForRoom(roomId, appUrl);
+    logAudit({
+      userId,
+      action: 'qr_regenerate',
+      entityType: 'room',
+      entityId: roomId,
+      metadata: { roomId },
+      ipAddress,
+    });
+    return result;
   }
 
   async getQrCodeForRoom(roomId: string) {
@@ -125,7 +135,7 @@ export class QrService {
       }));
   }
 
-  async regenerateAll(hotelId: string, appUrl: string) {
+  async regenerateAll(hotelId: string, appUrl: string, userId?: string, ipAddress?: string) {
     const rooms = await prisma.room.findMany({
       where: { hotelId, isActive: true },
     });
@@ -135,6 +145,15 @@ export class QrService {
       await this.generateForRoom(room.id, appUrl);
       generated++;
     }
+
+    logAudit({
+      userId,
+      action: 'qr_regenerate_all',
+      entityType: 'hotel',
+      entityId: hotelId,
+      metadata: { hotelId, count: generated },
+      ipAddress,
+    });
 
     return { generated, total: rooms.length };
   }

@@ -10,10 +10,11 @@ import {
   hashRecoveryCodes,
   verifyRecoveryCode,
 } from '../utils/mfa';
+import { logAudit } from '../utils/audit';
 import { BadRequestError, UnauthorizedError, NotFoundError } from '../utils/errors';
 
 export class MfaService {
-  async setupMfa(userId: string) {
+  async setupMfa(userId: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundError('User');
     if (user.mfaEnabled) throw new BadRequestError('MFA is already enabled');
@@ -31,6 +32,14 @@ export class MfaService {
       },
     });
 
+    logAudit({
+      userId,
+      action: 'mfa_setup_initiated',
+      entityType: 'user',
+      entityId: userId,
+      ipAddress,
+    });
+
     return {
       secret,
       qrCodeUrl: uri,
@@ -38,7 +47,7 @@ export class MfaService {
     };
   }
 
-  async confirmMfaSetup(userId: string, code: string) {
+  async confirmMfaSetup(userId: string, code: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundError('User');
     if (user.mfaEnabled) throw new BadRequestError('MFA is already enabled');
@@ -57,6 +66,8 @@ export class MfaService {
       },
     });
 
+    logAudit({ userId, action: 'mfa_enabled', entityType: 'user', entityId: userId, ipAddress });
+
     return { message: 'MFA enabled successfully' };
   }
 
@@ -74,7 +85,7 @@ export class MfaService {
     return true;
   }
 
-  async verifyRecoveryCodeLogin(userId: string, code: string) {
+  async verifyRecoveryCodeLogin(userId: string, code: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user || !user.mfaEnabled) {
       throw new BadRequestError('MFA not configured');
@@ -93,10 +104,19 @@ export class MfaService {
       data: { mfaRecoveryCodes: updatedCodes },
     });
 
+    logAudit({
+      userId,
+      action: 'mfa_recovery_code_used',
+      entityType: 'user',
+      entityId: userId,
+      metadata: { remainingCodes: updatedCodes.length },
+      ipAddress,
+    });
+
     return true;
   }
 
-  async disableMfa(userId: string) {
+  async disableMfa(userId: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundError('User');
     if (!user.mfaEnabled) throw new BadRequestError('MFA is not enabled');
@@ -110,6 +130,8 @@ export class MfaService {
         mfaSetupAt: null,
       },
     });
+
+    logAudit({ userId, action: 'mfa_disabled', entityType: 'user', entityId: userId, ipAddress });
 
     return { message: 'MFA disabled successfully' };
   }

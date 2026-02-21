@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { PASSWORD_SALT_ROUNDS } from '@tipper/shared';
 
 import { emailService } from './email.service';
+import { logAudit } from '../utils/audit';
 import { NotFoundError } from '../utils/errors';
 
 export class PlatformService {
@@ -26,24 +27,40 @@ export class PlatformService {
     return { hotels, total, page, limit };
   }
 
-  async approveHotel(hotelId: string) {
+  async approveHotel(hotelId: string, userId?: string, ipAddress?: string) {
     const hotel = await prisma.hotel.findUnique({ where: { id: hotelId } });
     if (!hotel) throw new NotFoundError('Hotel');
 
-    return prisma.hotel.update({
+    const result = await prisma.hotel.update({
       where: { id: hotelId },
       data: { status: 'approved' },
     });
+    logAudit({
+      userId,
+      action: 'hotel_approve',
+      entityType: 'hotel',
+      entityId: hotelId,
+      ipAddress,
+    });
+    return result;
   }
 
-  async suspendHotel(hotelId: string) {
+  async suspendHotel(hotelId: string, userId?: string, ipAddress?: string) {
     const hotel = await prisma.hotel.findUnique({ where: { id: hotelId } });
     if (!hotel) throw new NotFoundError('Hotel');
 
-    return prisma.hotel.update({
+    const result = await prisma.hotel.update({
       where: { id: hotelId },
       data: { status: 'suspended' },
     });
+    logAudit({
+      userId,
+      action: 'hotel_suspend',
+      entityType: 'hotel',
+      entityId: hotelId,
+      ipAddress,
+    });
+    return result;
   }
 
   async getAnalytics() {
@@ -81,15 +98,24 @@ export class PlatformService {
     return settings;
   }
 
-  async updateSettings(defaultPlatformFeePercent: number) {
+  async updateSettings(defaultPlatformFeePercent: number, userId?: string, ipAddress?: string) {
     const settings = await this.getSettings();
-    return prisma.platformSettings.update({
+    const result = await prisma.platformSettings.update({
       where: { id: settings.id },
       data: { defaultPlatformFeePercent },
     });
+    logAudit({
+      userId,
+      action: 'platform_settings_update',
+      entityType: 'platform_settings',
+      entityId: settings.id,
+      metadata: { defaultPlatformFeePercent },
+      ipAddress,
+    });
+    return result;
   }
 
-  async resetUserPassword(adminUserId: string, targetUserId: string) {
+  async resetUserPassword(adminUserId: string, targetUserId: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { id: targetUserId } });
     if (!user) throw new NotFoundError('User');
 
@@ -106,13 +132,12 @@ export class PlatformService {
 
     await emailService.sendAdminPasswordResetEmail(user.email, user.name, tempPassword);
 
-    await prisma.auditLog.create({
-      data: {
-        userId: adminUserId,
-        action: 'platform_reset_password',
-        entityType: 'user',
-        entityId: targetUserId,
-      },
+    logAudit({
+      userId: adminUserId,
+      action: 'platform_reset_password',
+      entityType: 'user',
+      entityId: targetUserId,
+      ipAddress,
     });
 
     return { message: 'Password reset successfully' };

@@ -19,6 +19,7 @@ import { analyticsExportService } from '../services/analytics-export.service';
 import { auditLogService } from '../services/audit-log.service';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { getClientIp } from '../utils/audit';
 import { sendSuccess } from '../utils/response';
 
 const router: Router = Router();
@@ -40,7 +41,11 @@ router.put(
   validate(hotelSettingsSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const hotel = await adminService.updateHotelSettings(req.user!.userId, req.body);
+      const hotel = await adminService.updateHotelSettings(
+        req.user!.userId,
+        req.body,
+        getClientIp(req),
+      );
       sendSuccess(res, hotel);
     } catch (err) {
       next(err);
@@ -54,7 +59,11 @@ router.put(
   validate(hotelProfileSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const hotel = await adminService.updateHotelProfile(req.user!.userId, req.body);
+      const hotel = await adminService.updateHotelProfile(
+        req.user!.userId,
+        req.body,
+        getClientIp(req),
+      );
       sendSuccess(res, hotel);
     } catch (err) {
       next(err);
@@ -68,7 +77,11 @@ router.post(
   validate(roomBulkGenerateSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await adminService.bulkCreateRooms(req.user!.userId, req.body);
+      const result = await adminService.bulkCreateRooms(
+        req.user!.userId,
+        req.body,
+        getClientIp(req),
+      );
       sendSuccess(res, result, 201);
     } catch (err) {
       next(err);
@@ -111,7 +124,7 @@ router.post(
   validate(staffCreateSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const staff = await adminService.createStaff(req.user!.userId, req.body);
+      const staff = await adminService.createStaff(req.user!.userId, req.body, getClientIp(req));
       sendSuccess(res, staff, 201);
     } catch (err) {
       next(err);
@@ -126,6 +139,7 @@ router.post(
       const result = await adminService.resetStaffPassword(
         req.user!.userId,
         req.params.id as string,
+        getClientIp(req),
       );
       sendSuccess(res, result);
     } catch (err) {
@@ -136,7 +150,7 @@ router.post(
 
 router.delete('/staff/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await adminService.deactivateStaff(req.user!.userId, req.params.id as string);
+    await adminService.deactivateStaff(req.user!.userId, req.params.id as string, getClientIp(req));
     sendSuccess(res, { message: 'Staff member deactivated' });
   } catch (err) {
     next(err);
@@ -145,7 +159,11 @@ router.delete('/staff/:id', async (req: Request, res: Response, next: NextFuncti
 
 router.post('/staff/import', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const results = await adminService.importStaff(req.user!.userId, req.body.staff);
+    const results = await adminService.importStaff(
+      req.user!.userId,
+      req.body.staff,
+      getClientIp(req),
+    );
     sendSuccess(res, results);
   } catch (err) {
     next(err);
@@ -167,7 +185,7 @@ router.post(
   validate(roomCreateSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const room = await adminService.createRoom(req.user!.userId, req.body);
+      const room = await adminService.createRoom(req.user!.userId, req.body, getClientIp(req));
       sendSuccess(res, room, 201);
     } catch (err) {
       next(err);
@@ -177,7 +195,7 @@ router.post(
 
 router.delete('/rooms/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await adminService.deleteRoom(req.user!.userId, req.params.id as string);
+    await adminService.deleteRoom(req.user!.userId, req.params.id as string, getClientIp(req));
     sendSuccess(res, { message: 'Room deactivated' });
   } catch (err) {
     next(err);
@@ -197,7 +215,12 @@ router.get('/rooms/:id/qr', async (req: Request, res: Response, next: NextFuncti
 router.post('/rooms/:id/qr/regenerate', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const result = await qrService.regenerate(req.params.id as string, appUrl);
+    const result = await qrService.regenerate(
+      req.params.id as string,
+      appUrl,
+      req.user!.userId,
+      getClientIp(req),
+    );
     sendSuccess(res, result);
   } catch (err) {
     next(err);
@@ -246,7 +269,12 @@ router.post('/qr/regenerate-all', async (req: Request, res: Response, next: Next
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const hotel = await adminService.getHotel(req.user!.userId);
-    const result = await qrService.regenerateAll(hotel!.id, appUrl);
+    const result = await qrService.regenerateAll(
+      hotel!.id,
+      appUrl,
+      req.user!.userId,
+      getClientIp(req),
+    );
     sendSuccess(res, result);
   } catch (err) {
     next(err);
@@ -274,6 +302,7 @@ router.post(
         staffMemberId,
         roomId,
         assignedDate,
+        getClientIp(req),
       );
       sendSuccess(res, result, 201);
     } catch (err) {

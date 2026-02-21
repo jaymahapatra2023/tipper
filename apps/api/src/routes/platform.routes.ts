@@ -12,6 +12,7 @@ import { platformService } from '../services/platform.service';
 import { auditLogService } from '../services/audit-log.service';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
+import { getClientIp } from '../utils/audit';
 import { sendSuccess } from '../utils/response';
 
 const router: Router = Router();
@@ -36,7 +37,11 @@ router.get('/hotels', async (req: Request, res: Response, next: NextFunction) =>
 
 router.put('/hotels/:id/approve', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await platformService.approveHotel(req.params.id as string);
+    const result = await platformService.approveHotel(
+      req.params.id as string,
+      req.user!.userId,
+      getClientIp(req),
+    );
     sendSuccess(res, result);
   } catch (err) {
     next(err);
@@ -45,7 +50,11 @@ router.put('/hotels/:id/approve', async (req: Request, res: Response, next: Next
 
 router.put('/hotels/:id/suspend', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await platformService.suspendHotel(req.params.id as string);
+    const result = await platformService.suspendHotel(
+      req.params.id as string,
+      req.user!.userId,
+      getClientIp(req),
+    );
     sendSuccess(res, result);
   } catch (err) {
     next(err);
@@ -75,7 +84,11 @@ router.put(
   validate(platformSettingsSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await platformService.updateSettings(req.body.defaultPlatformFeePercent);
+      const result = await platformService.updateSettings(
+        req.body.defaultPlatformFeePercent,
+        req.user!.userId,
+        getClientIp(req),
+      );
       sendSuccess(res, result);
     } catch (err) {
       next(err);
@@ -90,6 +103,7 @@ router.post(
       const result = await platformService.resetUserPassword(
         req.user!.userId,
         req.params.id as string,
+        getClientIp(req),
       );
       sendSuccess(res, result);
     } catch (err) {

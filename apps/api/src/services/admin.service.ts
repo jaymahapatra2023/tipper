@@ -11,6 +11,7 @@ import crypto from 'crypto';
 
 import { stripe } from '../config/stripe';
 import { emailService } from './email.service';
+import { logAudit } from '../utils/audit';
 import { BadRequestError, NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 
 export class AdminService {
@@ -19,12 +20,21 @@ export class AdminService {
     return prisma.hotel.findUnique({ where: { id: admin.hotelId } });
   }
 
-  async updateHotelSettings(userId: string, settings: HotelSettingsInput) {
+  async updateHotelSettings(userId: string, settings: HotelSettingsInput, ipAddress?: string) {
     const admin = await this.getHotelAdmin(userId);
-    return prisma.hotel.update({
+    const hotel = await prisma.hotel.update({
       where: { id: admin.hotelId },
       data: settings,
     });
+    logAudit({
+      userId,
+      action: 'hotel_settings_update',
+      entityType: 'hotel',
+      entityId: admin.hotelId,
+      metadata: settings as Record<string, unknown>,
+      ipAddress,
+    });
+    return hotel;
   }
 
   // Staff management
@@ -37,7 +47,7 @@ export class AdminService {
     });
   }
 
-  async createStaff(userId: string, input: StaffCreateInput) {
+  async createStaff(userId: string, input: StaffCreateInput, ipAddress?: string) {
     const admin = await this.getHotelAdmin(userId);
 
     // Check if email already exists
@@ -63,13 +73,22 @@ export class AdminService {
       await emailService.sendWelcomeEmail(input.email, input.name, tempPassword);
     }
 
-    return prisma.staffMember.create({
+    const staffMember = await prisma.staffMember.create({
       data: { userId: user.id, hotelId: admin.hotelId },
       include: { user: { select: { id: true, email: true, name: true } } },
     });
+    logAudit({
+      userId,
+      action: 'staff_create',
+      entityType: 'staff',
+      entityId: staffMember.id,
+      metadata: { email: input.email, name: input.name },
+      ipAddress,
+    });
+    return staffMember;
   }
 
-  async resetStaffPassword(adminUserId: string, targetUserId: string) {
+  async resetStaffPassword(adminUserId: string, targetUserId: string, ipAddress?: string) {
     const admin = await this.getHotelAdmin(adminUserId);
 
     // Verify target user is staff at this hotel
@@ -96,34 +115,41 @@ export class AdminService {
       tempPassword,
     );
 
-    await prisma.auditLog.create({
-      data: {
-        userId: adminUserId,
-        action: 'admin_reset_password',
-        entityType: 'user',
-        entityId: targetUserId,
-      },
+    logAudit({
+      userId: adminUserId,
+      action: 'admin_reset_password',
+      entityType: 'user',
+      entityId: targetUserId,
+      ipAddress,
     });
 
     return { message: 'Password reset successfully' };
   }
 
-  async deactivateStaff(userId: string, staffMemberId: string) {
+  async deactivateStaff(userId: string, staffMemberId: string, ipAddress?: string) {
     const admin = await this.getHotelAdmin(userId);
     const staff = await prisma.staffMember.findUnique({ where: { id: staffMemberId } });
     if (!staff || staff.hotelId !== admin.hotelId) throw new NotFoundError('Staff member');
 
-    return prisma.staffMember.update({
+    const result = await prisma.staffMember.update({
       where: { id: staffMemberId },
       data: { isActive: false },
     });
+    logAudit({
+      userId,
+      action: 'staff_deactivate',
+      entityType: 'staff',
+      entityId: staffMemberId,
+      ipAddress,
+    });
+    return result;
   }
 
-  async importStaff(userId: string, staffList: StaffCreateInput[]) {
+  async importStaff(userId: string, staffList: StaffCreateInput[], ipAddress?: string) {
     const results = [];
     for (const input of staffList) {
       try {
-        const staff = await this.createStaff(userId, input);
+        const staff = await this.createStaff(userId, input, ipAddress);
         results.push({ email: input.email, status: 'created', id: staff.id });
       } catch (err) {
         results.push({
@@ -133,6 +159,14 @@ export class AdminService {
         });
       }
     }
+    const createdCount = results.filter((r) => r.status === 'created').length;
+    logAudit({
+      userId,
+      action: 'staff_bulk_import',
+      entityType: 'staff',
+      metadata: { count: createdCount },
+      ipAddress,
+    });
     return results;
   }
 
@@ -146,7 +180,7 @@ export class AdminService {
     });
   }
 
-  async createRoom(userId: string, input: RoomCreateInput) {
+  async createRoom(userId: string, input: RoomCreateInput, ipAddress?: string) {
     const admin = await this.getHotelAdmin(userId);
 
     const existing = await prisma.room.findFirst({
@@ -154,20 +188,31 @@ export class AdminService {
     });
     if (existing) throw new ConflictError(`Room ${input.roomNumber} already exists`);
 
-    return prisma.room.create({
+    const room = await prisma.room.create({
       data: { ...input, hotelId: admin.hotelId },
     });
+    logAudit({
+      userId,
+      action: 'room_create',
+      entityType: 'room',
+      entityId: room.id,
+      metadata: { roomNumber: input.roomNumber },
+      ipAddress,
+    });
+    return room;
   }
 
-  async deleteRoom(userId: string, roomId: string) {
+  async deleteRoom(userId: string, roomId: string, ipAddress?: string) {
     const admin = await this.getHotelAdmin(userId);
     const room = await prisma.room.findUnique({ where: { id: roomId } });
     if (!room || room.hotelId !== admin.hotelId) throw new NotFoundError('Room');
 
-    return prisma.room.update({
+    const result = await prisma.room.update({
       where: { id: roomId },
       data: { isActive: false },
     });
+    logAudit({ userId, action: 'room_delete', entityType: 'room', entityId: roomId, ipAddress });
+    return result;
   }
 
   // Assignments
@@ -195,6 +240,7 @@ export class AdminService {
     staffMemberId: string,
     roomId: string,
     assignedDate: string,
+    ipAddress?: string,
   ) {
     const admin = await this.getHotelAdmin(userId);
 
@@ -212,9 +258,18 @@ export class AdminService {
     });
     if (existing) throw new ConflictError('Room already assigned for this date');
 
-    return prisma.roomAssignment.create({
+    const assignment = await prisma.roomAssignment.create({
       data: { staffMemberId, roomId, assignedDate: new Date(assignedDate) },
     });
+    logAudit({
+      userId,
+      action: 'assignment_create',
+      entityType: 'assignment',
+      entityId: assignment.id,
+      metadata: { roomId, staffMemberId, assignedDate },
+      ipAddress,
+    });
+    return assignment;
   }
 
   // Analytics
@@ -335,9 +390,9 @@ export class AdminService {
   }
 
   // Hotel profile update (onboarding step 1)
-  async updateHotelProfile(userId: string, input: HotelProfileInput) {
+  async updateHotelProfile(userId: string, input: HotelProfileInput, ipAddress?: string) {
     const admin = await this.getHotelAdmin(userId);
-    return prisma.hotel.update({
+    const hotel = await prisma.hotel.update({
       where: { id: admin.hotelId },
       data: {
         name: input.name,
@@ -351,6 +406,14 @@ export class AdminService {
         website: input.website || null,
       },
     });
+    logAudit({
+      userId,
+      action: 'hotel_profile_update',
+      entityType: 'hotel',
+      entityId: admin.hotelId,
+      ipAddress,
+    });
+    return hotel;
   }
 
   // Bulk room creation (onboarding step 2)
@@ -363,6 +426,7 @@ export class AdminService {
       roomType?: string;
       prefix?: string;
     },
+    ipAddress?: string,
   ) {
     const admin = await this.getHotelAdmin(userId);
     const rooms = [];
@@ -379,6 +443,14 @@ export class AdminService {
     const result = await prisma.room.createMany({
       data: rooms,
       skipDuplicates: true,
+    });
+
+    logAudit({
+      userId,
+      action: 'room_bulk_create',
+      entityType: 'room',
+      metadata: { floor: input.floor, count: result.count },
+      ipAddress,
     });
 
     return { created: result.count, total: rooms.length };

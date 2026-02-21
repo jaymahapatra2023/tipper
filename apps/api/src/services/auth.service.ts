@@ -13,10 +13,17 @@ import type { JwtPayload } from '@tipper/shared';
 import { env } from '../config/env';
 import { emailService } from './email.service';
 import { mfaService } from './mfa.service';
+import { logAudit } from '../utils/audit';
 import { BadRequestError, UnauthorizedError, ConflictError, NotFoundError } from '../utils/errors';
 
 export class AuthService {
-  async register(email: string, password: string, name: string, role: UserRole = UserRole.GUEST) {
+  async register(
+    email: string,
+    password: string,
+    name: string,
+    role: UserRole = UserRole.GUEST,
+    ipAddress?: string,
+  ) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictError('Email already registered');
@@ -28,6 +35,14 @@ export class AuthService {
       select: { id: true, email: true, name: true, role: true, createdAt: true },
     });
 
+    logAudit({
+      userId: user.id,
+      action: 'user_register',
+      entityType: 'user',
+      entityId: user.id,
+      ipAddress,
+    });
+
     const tokens = await this.generateTokens({
       userId: user.id,
       email: user.email,
@@ -37,17 +52,37 @@ export class AuthService {
     return { user, ...tokens };
   }
 
-  async login(email: string, password: string) {
+  async login(email: string, password: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !user.passwordHash) {
+      logAudit({
+        action: 'login_failure',
+        entityType: 'auth',
+        metadata: { email, reason: 'invalid_credentials' },
+        ipAddress,
+      });
       throw new UnauthorizedError('Invalid email or password');
     }
     if (!user.isActive) {
+      logAudit({
+        userId: user.id,
+        action: 'login_failure',
+        entityType: 'auth',
+        metadata: { reason: 'account_deactivated' },
+        ipAddress,
+      });
       throw new UnauthorizedError('Account is deactivated');
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      logAudit({
+        userId: user.id,
+        action: 'login_failure',
+        entityType: 'auth',
+        metadata: { reason: 'invalid_credentials' },
+        ipAddress,
+      });
       throw new UnauthorizedError('Invalid email or password');
     }
 
@@ -65,6 +100,7 @@ export class AuthService {
     const needsMfaSetup = await this.checkHotelMfaRequirement(user);
     if (needsMfaSetup) {
       const tokens = await this.generateTokensForUser(user);
+      logAudit({ userId: user.id, action: 'login_success', entityType: 'auth', ipAddress });
       return {
         needsMfaSetup: true,
         user: { id: user.id, email: user.email, name: user.name, role: user.role },
@@ -74,13 +110,15 @@ export class AuthService {
 
     const tokens = await this.generateTokensForUser(user);
 
+    logAudit({ userId: user.id, action: 'login_success', entityType: 'auth', ipAddress });
+
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
       ...tokens,
     };
   }
 
-  async verifyMfa(mfaToken: string, code: string) {
+  async verifyMfa(mfaToken: string, code: string, ipAddress?: string) {
     const userId = await mfaService.validateMfaToken(mfaToken);
     await mfaService.verifyLoginMfa(userId, code);
 
@@ -88,20 +126,34 @@ export class AuthService {
     if (!user) throw new UnauthorizedError('User not found');
 
     const tokens = await this.generateTokensForUser(user);
+    logAudit({
+      userId: user.id,
+      action: 'login_success',
+      entityType: 'auth',
+      metadata: { mfa: true },
+      ipAddress,
+    });
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
       ...tokens,
     };
   }
 
-  async verifyMfaRecovery(mfaToken: string, recoveryCode: string) {
+  async verifyMfaRecovery(mfaToken: string, recoveryCode: string, ipAddress?: string) {
     const userId = await mfaService.validateMfaToken(mfaToken);
-    await mfaService.verifyRecoveryCodeLogin(userId, recoveryCode);
+    await mfaService.verifyRecoveryCodeLogin(userId, recoveryCode, ipAddress);
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedError('User not found');
 
     const tokens = await this.generateTokensForUser(user);
+    logAudit({
+      userId: user.id,
+      action: 'login_success',
+      entityType: 'auth',
+      metadata: { mfa: true, recovery: true },
+      ipAddress,
+    });
     return {
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
       ...tokens,
@@ -126,7 +178,13 @@ export class AuthService {
     return hotel?.mfaRequired ?? false;
   }
 
-  async registerHotel(hotelName: string, name: string, email: string, password: string) {
+  async registerHotel(
+    hotelName: string,
+    name: string,
+    email: string,
+    password: string,
+    ipAddress?: string,
+  ) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictError('Email already registered');
@@ -161,6 +219,14 @@ export class AuthService {
       return { user, hotel };
     });
 
+    logAudit({
+      userId: result.user.id,
+      action: 'hotel_register',
+      entityType: 'hotel',
+      entityId: result.hotel.id,
+      ipAddress,
+    });
+
     const tokens = await this.generateTokens({
       userId: result.user.id,
       email: result.user.email,
@@ -189,13 +255,18 @@ export class AuthService {
     return this.generateTokens(payload);
   }
 
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string, userId?: string, ipAddress?: string) {
     await prisma.refreshToken.deleteMany({ where: { token: refreshToken } });
+    if (userId) {
+      logAudit({ userId, action: 'logout', entityType: 'auth', ipAddress });
+    }
   }
 
-  async forgotPassword(email: string) {
+  async forgotPassword(email: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return; // Don't reveal if user exists
+
+    logAudit({ userId: user.id, action: 'password_reset_request', entityType: 'auth', ipAddress });
 
     // Delete old reset tokens for this user
     await prisma.refreshToken.deleteMany({
@@ -215,7 +286,7 @@ export class AuthService {
     await emailService.sendPasswordResetEmail(user.email, user.name, token);
   }
 
-  async resetPassword(token: string, newPassword: string) {
+  async resetPassword(token: string, newPassword: string, ipAddress?: string) {
     const stored = await prisma.refreshToken.findUnique({ where: { token: `reset_${token}` } });
     if (!stored || stored.expiresAt < new Date()) {
       throw new BadRequestError('Invalid or expired reset token');
@@ -228,6 +299,13 @@ export class AuthService {
     });
 
     await prisma.refreshToken.delete({ where: { id: stored.id } });
+
+    logAudit({
+      userId: stored.userId,
+      action: 'password_reset_complete',
+      entityType: 'auth',
+      ipAddress,
+    });
   }
 
   async getUserById(userId: string) {

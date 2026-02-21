@@ -1,12 +1,15 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
 import { authService } from '../services/auth.service';
 import { mfaService } from '../services/mfa.service';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
 import { authLimiter, resetLimiter, mfaLimiter } from '../middleware/rateLimiter';
+import { getClientIp } from '../utils/audit';
 import { sendSuccess } from '../utils/response';
+import { env } from '../config/env';
 import {
   registerSchema,
   loginSchema,
@@ -27,7 +30,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email, password, name, role } = req.body;
-      const result = await authService.register(email, password, name, role);
+      const result = await authService.register(email, password, name, role, getClientIp(req));
 
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
@@ -51,7 +54,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { email, password } = req.body;
-      const result = await authService.login(email, password);
+      const result = await authService.login(email, password, getClientIp(req));
 
       // If MFA is required, return MFA token (no session tokens yet)
       if ('mfaRequired' in result && result.mfaRequired) {
@@ -95,7 +98,13 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { hotelName, name, email, password } = req.body;
-      const result = await authService.registerHotel(hotelName, name, email, password);
+      const result = await authService.registerHotel(
+        hotelName,
+        name,
+        email,
+        password,
+        getClientIp(req),
+      );
 
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
@@ -138,7 +147,22 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
 router.post('/logout', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies?.refreshToken || req.body.refreshToken;
-    if (token) await authService.logout(token);
+
+    // Best-effort userId extraction from Authorization header
+    let userId: string | undefined;
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        const decoded = jwt.verify(authHeader.slice(7), env.JWT_ACCESS_SECRET) as {
+          userId?: string;
+        };
+        userId = decoded.userId;
+      }
+    } catch {
+      // Token may be expired or invalid — proceed without userId
+    }
+
+    if (token) await authService.logout(token, userId, getClientIp(req));
 
     res.clearCookie('refreshToken', { path: '/api/v1/auth' });
     sendSuccess(res, { message: 'Logged out' });
@@ -153,7 +177,7 @@ router.post(
   validate(forgotPasswordSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await authService.forgotPassword(req.body.email);
+      await authService.forgotPassword(req.body.email, getClientIp(req));
       sendSuccess(res, { message: 'If an account exists, a reset email has been sent' });
     } catch (err) {
       next(err);
@@ -167,7 +191,7 @@ router.post(
   validate(resetPasswordSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await authService.resetPassword(req.body.token, req.body.password);
+      await authService.resetPassword(req.body.token, req.body.password, getClientIp(req));
       sendSuccess(res, { message: 'Password reset successfully' });
     } catch (err) {
       next(err);
@@ -192,7 +216,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { mfaToken, code } = req.body;
-      const result = await authService.verifyMfa(mfaToken, code);
+      const result = await authService.verifyMfa(mfaToken, code, getClientIp(req));
 
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
@@ -216,7 +240,7 @@ router.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { mfaToken, recoveryCode } = req.body;
-      const result = await authService.verifyMfaRecovery(mfaToken, recoveryCode);
+      const result = await authService.verifyMfaRecovery(mfaToken, recoveryCode, getClientIp(req));
 
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
@@ -235,7 +259,7 @@ router.post(
 
 router.post('/mfa/setup', authenticate, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await mfaService.setupMfa(req.user!.userId);
+    const result = await mfaService.setupMfa(req.user!.userId, getClientIp(req));
     sendSuccess(res, result);
   } catch (err) {
     next(err);
@@ -248,7 +272,11 @@ router.post(
   validate(mfaSetupVerifySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await mfaService.confirmMfaSetup(req.user!.userId, req.body.code);
+      const result = await mfaService.confirmMfaSetup(
+        req.user!.userId,
+        req.body.code,
+        getClientIp(req),
+      );
       sendSuccess(res, result);
     } catch (err) {
       next(err);
@@ -261,7 +289,7 @@ router.post(
   authenticate,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await mfaService.disableMfa(req.user!.userId);
+      const result = await mfaService.disableMfa(req.user!.userId, getClientIp(req));
       sendSuccess(res, result);
     } catch (err) {
       next(err);

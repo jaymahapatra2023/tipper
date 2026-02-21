@@ -18,6 +18,9 @@ import { payoutRoutes } from './routes/payout.routes';
 
 const app: Express = express();
 
+// Trust proxy so req.ip returns real client IP behind load balancer
+app.set('trust proxy', true);
+
 // Stripe webhooks need raw body
 app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);
 
