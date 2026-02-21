@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Outfit, Sora } from 'next/font/google';
 import { AuthProvider } from '@/hooks/use-auth';
+import { AssistantWrapper } from '@/components/shared/assistant-wrapper';
 import './globals.css';
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-sans' });
@@ -15,7 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${outfit.variable} ${sora.variable}`}>
       <body className="min-h-screen bg-background antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <AssistantWrapper />
+        </AuthProvider>
       </body>
     </html>
   );

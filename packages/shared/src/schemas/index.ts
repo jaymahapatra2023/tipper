@@ -241,6 +241,26 @@ export const auditLogQuerySchema = z.object({
     .optional(),
 });
 
+// Feedback schemas
+export const feedbackCreateSchema = z.object({
+  type: z.enum(['bug', 'enhancement']),
+  subject: z.string().min(1).max(200),
+  description: z.string().min(1).max(2000),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+});
+
+export const feedbackQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  type: z.enum(['bug', 'enhancement']).optional(),
+  status: z.enum(['open', 'in_progress', 'resolved', 'closed']).optional(),
+});
+
+export const feedbackUpdateSchema = z.object({
+  status: z.enum(['open', 'in_progress', 'resolved', 'closed']).optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+});
+
 // Type exports from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -258,3 +278,6 @@ export type HotelProfileInput = z.infer<typeof hotelProfileSchema>;
 export type RoomBulkGenerateInput = z.infer<typeof roomBulkGenerateSchema>;
 export type AnalyticsExportInput = z.infer<typeof analyticsExportSchema>;
 export type AuditLogQueryInput = z.infer<typeof auditLogQuerySchema>;
+export type FeedbackCreateInput = z.infer<typeof feedbackCreateSchema>;
+export type FeedbackQueryInput = z.infer<typeof feedbackQuerySchema>;
+export type FeedbackUpdateInput = z.infer<typeof feedbackUpdateSchema>;

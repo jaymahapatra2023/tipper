@@ -15,6 +15,7 @@ import { adminRoutes } from './routes/admin.routes';
 import { platformRoutes } from './routes/platform.routes';
 import { webhookRoutes } from './routes/webhook.routes';
 import { payoutRoutes } from './routes/payout.routes';
+import { feedbackRoutes } from './routes/feedback.routes';
 
 const app: Express = express();
 
@@ -53,6 +54,7 @@ app.use('/api/v1/staff', staffRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/platform', platformRoutes);
 app.use('/api/v1/platform/payouts', payoutRoutes);
+app.use('/api/v1/feedback', feedbackRoutes);
 
 // Error handler
 app.use(errorHandler);

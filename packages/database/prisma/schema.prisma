@@ -70,6 +70,7 @@ model User {
   hotelAdmins   HotelAdmin[]
   tips          Tip[]          @relation("GuestTips")
   auditLogs     AuditLog[]
+  feedback      Feedback[]
 
   @@map("users")
 }
@@ -326,4 +327,35 @@ model RefreshToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("refresh_tokens")
+}
+
+enum FeedbackType {
+  bug
+  enhancement
+}
+
+enum FeedbackStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+model Feedback {
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  type        FeedbackType
+  subject     String
+  description String
+  status      FeedbackStatus @default(open)
+  priority    String         @default("medium")
+  resolvedAt  DateTime?      @map("resolved_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, status])
+  @@map("feedback")
 }
