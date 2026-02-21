@@ -6,6 +6,7 @@ const platformNav = [
   { label: 'Hotels', href: '/platform-hotels' },
   { label: 'Analytics', href: '/platform-analytics' },
   { label: 'Payouts', href: '/platform-payouts' },
+  { label: 'Audit Log', href: '/platform-audit-log' },
   { label: 'Settings', href: '/platform-settings' },
 ];
 

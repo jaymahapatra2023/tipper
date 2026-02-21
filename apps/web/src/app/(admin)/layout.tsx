@@ -1,6 +1,14 @@
 'use client';
 
-import { LayoutDashboard, Users, DoorOpen, QrCode, BarChart3, Settings } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Users,
+  DoorOpen,
+  QrCode,
+  BarChart3,
+  Shield,
+  Settings,
+} from 'lucide-react';
 import { Sidebar } from '@/components/shared/sidebar';
 
 const adminNav = [
@@ -9,6 +17,7 @@ const adminNav = [
   { label: 'Rooms', href: '/admin-rooms', icon: DoorOpen },
   { label: 'QR Codes', href: '/admin-qr-codes', icon: QrCode },
   { label: 'Analytics', href: '/admin-analytics', icon: BarChart3 },
+  { label: 'Audit Log', href: '/admin-audit-log', icon: Shield },
   { label: 'Settings', href: '/admin-settings', icon: Settings },
 ];
 

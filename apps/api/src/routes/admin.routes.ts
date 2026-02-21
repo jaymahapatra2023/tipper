@@ -9,12 +9,14 @@ import {
   roomCreateSchema,
   assignmentCreateSchema,
   analyticsExportSchema,
+  auditLogQuerySchema,
 } from '@tipper/shared';
 
 import { adminService } from '../services/admin.service';
 import { qrService } from '../services/qr.service';
 import { qrExportService } from '../services/qr-export.service';
 import { analyticsExportService } from '../services/analytics-export.service';
+import { auditLogService } from '../services/audit-log.service';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess } from '../utils/response';
@@ -347,5 +349,68 @@ router.get(
     }
   },
 );
+
+// Audit Logs
+router.get(
+  '/audit-logs',
+  validate(auditLogQuerySchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = req.query as unknown as import('@tipper/shared').AuditLogQueryInput;
+      const hotel = await adminService.getHotel(req.user!.userId);
+      const userIds = await getHotelUserIds(hotel!.id);
+      const result = await auditLogService.getLogs(filters, userIds);
+      sendSuccess(res, result.logs, 200, {
+        page: filters.page,
+        limit: filters.limit,
+        total: result.total,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get('/audit-logs/filters', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const hotel = await adminService.getHotel(req.user!.userId);
+    const userIds = await getHotelUserIds(hotel!.id);
+    const options = await auditLogService.getFilterOptions(userIds);
+    sendSuccess(res, options);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get(
+  '/audit-logs/export',
+  validate(auditLogQuerySchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = req.query as unknown as import('@tipper/shared').AuditLogQueryInput;
+      const hotel = await adminService.getHotel(req.user!.userId);
+      const userIds = await getHotelUserIds(hotel!.id);
+      const csv = await auditLogService.exportCsv(filters, userIds);
+
+      const filename = `audit-log-export-${new Date().toISOString().split('T')[0]}.csv`;
+      res.set({
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      });
+      res.send(csv);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+async function getHotelUserIds(hotelId: string): Promise<string[]> {
+  const { prisma } = await import('@tipper/database');
+  const [admins, staff] = await Promise.all([
+    prisma.hotelAdmin.findMany({ where: { hotelId }, select: { userId: true } }),
+    prisma.staffMember.findMany({ where: { hotelId }, select: { userId: true } }),
+  ]);
+  return [...admins.map((a) => a.userId), ...staff.map((s) => s.userId)];
+}
 
 export { router as adminRoutes };

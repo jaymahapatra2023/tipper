@@ -1,8 +1,15 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { UserRole, platformSettingsSchema, hotelApprovalSchema } from '@tipper/shared';
+import {
+  UserRole,
+  platformSettingsSchema,
+  hotelApprovalSchema,
+  auditLogQuerySchema,
+} from '@tipper/shared';
+import type { AuditLogQueryInput } from '@tipper/shared';
 
 import { platformService } from '../services/platform.service';
+import { auditLogService } from '../services/audit-log.service';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess } from '../utils/response';
@@ -85,6 +92,54 @@ router.post(
         req.params.id as string,
       );
       sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Audit Logs
+router.get(
+  '/audit-logs',
+  validate(auditLogQuerySchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = req.query as unknown as AuditLogQueryInput;
+      const result = await auditLogService.getLogs(filters);
+      sendSuccess(res, result.logs, 200, {
+        page: filters.page,
+        limit: filters.limit,
+        total: result.total,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get('/audit-logs/filters', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const options = await auditLogService.getFilterOptions();
+    sendSuccess(res, options);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get(
+  '/audit-logs/export',
+  validate(auditLogQuerySchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const filters = req.query as unknown as AuditLogQueryInput;
+      const csv = await auditLogService.exportCsv(filters);
+
+      const filename = `audit-log-export-${new Date().toISOString().split('T')[0]}.csv`;
+      res.set({
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      });
+      res.send(csv);
     } catch (err) {
       next(err);
     }
