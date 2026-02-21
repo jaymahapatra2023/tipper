@@ -122,9 +122,11 @@ model Hotel {
   logoUrl             String?     @map("logo_url")
   primaryColor        String?     @map("primary_color")
   secondaryColor      String?     @map("secondary_color")
-  feedbackTags        String[]    @default([]) @map("feedback_tags")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
+  feedbackTags           String[]    @default([]) @map("feedback_tags")
+  leaderboardEnabled     Boolean     @default(false) @map("leaderboard_enabled")
+  leaderboardAnonymized  Boolean     @default(false) @map("leaderboard_anonymized")
+  createdAt              DateTime    @default(now()) @map("created_at")
+  updatedAt              DateTime    @updatedAt @map("updated_at")
 
   rooms        Room[]
   staffMembers StaffMember[]

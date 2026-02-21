@@ -199,6 +199,48 @@ export interface StaffPayoutSummary {
   lastPayoutAmount?: number;
 }
 
+export interface StaffMilestone {
+  id: string;
+  label: string;
+  description: string;
+  achieved: boolean;
+  progress: number; // 0-100
+  icon: string;
+}
+
+export interface DailyEarningsData {
+  date: string;
+  earnings: number;
+  tipCount: number;
+}
+
+export interface StaffPerformanceMetrics {
+  thisWeekEarnings: number;
+  thisMonthEarnings: number;
+  totalEarnings: number;
+  tipCount: number;
+  averageTip: number;
+  averageRating?: number;
+  weekTrend: number; // % change vs last week
+  monthTrend: number; // % change vs last month
+  dailyData: DailyEarningsData[];
+  milestones: StaffMilestone[];
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  staffName: string;
+  tipCount: number;
+  totalEarnings: number;
+  averageRating?: number;
+  isCurrentUser: boolean;
+}
+
+export interface StaffPerformanceResponse {
+  metrics: StaffPerformanceMetrics;
+  leaderboard?: LeaderboardEntry[];
+}
+
 export interface ReceiptData {
   tipId: string;
   hotelName: string;

@@ -81,6 +81,15 @@ router.get('/stripe/status', async (req: Request, res: Response, next: NextFunct
   }
 });
 
+router.get('/performance', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await staffService.getPerformance(req.user!.userId);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/payouts/summary', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await staffService.getPayoutSummary(req.user!.userId);

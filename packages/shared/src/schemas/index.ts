@@ -99,6 +99,8 @@ export const hotelSettingsSchema = z.object({
   geofenceLongitude: z.number().min(-180).max(180).optional(),
   geofenceRadius: z.number().min(50).max(5000).optional(),
   feedbackTags: z.array(z.string().min(1).max(50)).max(10).optional(),
+  leaderboardEnabled: z.boolean().optional(),
+  leaderboardAnonymized: z.boolean().optional(),
 });
 
 export const tipFeedbackSchema = z.object({

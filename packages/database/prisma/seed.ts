@@ -76,6 +76,7 @@ async function main() {
       minTipAmount: 100,
       maxTipAmount: 50000,
       poolingEnabled: false,
+      leaderboardEnabled: true,
       primaryColor: '#c9a84c',
       secondaryColor: '#0f1b2d',
       feedbackTags: [
@@ -245,6 +246,60 @@ async function main() {
     });
   }
 
+  // Generate additional tips spread over past 30 days for performance charts/milestones
+  const additionalTips = [];
+  for (let day = 1; day <= 30; day++) {
+    // 1-2 tips per day, distributed across staff
+    const tipsThisDay = day % 3 === 0 ? 2 : 1;
+    for (let t = 0; t < tipsThisDay; t++) {
+      const staffIdx = (day + t) % staffMembers.length;
+      const roomIdx = (day + t) % rooms.length;
+      const amount = [500, 800, 1000, 1200, 1500, 2000][day % 6];
+      const rating = day % 5 === 0 ? null : [3, 4, 4, 5, 5][day % 5];
+      additionalTips.push({ day, staffIdx, roomIdx, amount, rating });
+    }
+  }
+
+  for (const at of additionalTips) {
+    const tipDate = new Date();
+    tipDate.setDate(tipDate.getDate() - at.day);
+    tipDate.setHours(10 + (at.day % 8), 0, 0, 0);
+    const receiptToken = randomBytes(24).toString('hex');
+
+    const tip = await prisma.tip.create({
+      data: {
+        hotelId: hotel.id,
+        roomId: rooms[at.roomIdx].id,
+        guestId: guestUser.id,
+        guestName: 'John Doe',
+        guestEmail: 'guest@example.com',
+        checkInDate: new Date(tipDate.getTime() - 3 * 86400000),
+        checkOutDate: tipDate,
+        tipMethod: 'flat',
+        totalAmount: at.amount,
+        platformFee: Math.round(at.amount * 0.1),
+        netAmount: at.amount - Math.round(at.amount * 0.1),
+        currency: 'usd',
+        rating: at.rating,
+        feedbackTags: at.rating && at.rating >= 4 ? ['Spotless room'] : [],
+        status: 'succeeded',
+        receiptToken,
+        paidAt: tipDate,
+        createdAt: tipDate,
+      },
+    });
+
+    await prisma.tipDistribution.create({
+      data: {
+        tipId: tip.id,
+        staffMemberId: staffMembers[at.staffIdx].id,
+        amount: tip.netAmount,
+        createdAt: tipDate,
+      },
+    });
+  }
+
+  console.log(`  - Additional performance tips: ${additionalTips.length}`);
   console.log('Seed completed!');
   console.log(`  - Platform admin: admin@tipper.app / Admin123!`);
   console.log(`  - Hotel admin: manager@grandhotel.com / Hotel123!`);

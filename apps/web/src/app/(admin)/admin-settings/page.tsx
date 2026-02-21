@@ -2,7 +2,17 @@
 
 import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, MapPin, Palette, Upload, Trash2, MessageSquare, Plus, X } from 'lucide-react';
+import {
+  ShieldCheck,
+  MapPin,
+  Palette,
+  Upload,
+  Trash2,
+  MessageSquare,
+  Plus,
+  X,
+  Trophy,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,6 +41,8 @@ interface HotelData {
   primaryColor: string | null;
   secondaryColor: string | null;
   feedbackTags: string[];
+  leaderboardEnabled: boolean;
+  leaderboardAnonymized: boolean;
 }
 
 interface StripeStatus {
@@ -109,6 +121,8 @@ function AdminSettingsContent() {
       geofenceLongitude: hotel.geofenceLongitude,
       geofenceRadius: hotel.geofenceRadius,
       feedbackTags: feedbackTags.length > 0 ? feedbackTags : undefined,
+      leaderboardEnabled: hotel.leaderboardEnabled,
+      leaderboardAnonymized: hotel.leaderboardAnonymized,
     });
     setSaving(false);
   }
@@ -579,6 +593,53 @@ function AdminSettingsContent() {
                 onClick={() => setHotel({ ...hotel, poolingType: 'weighted' })}
               >
                 Weighted
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden card-hover">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trophy className="h-5 w-5" />
+            Staff Leaderboard
+          </CardTitle>
+          <CardDescription>
+            Allow staff to see a ranked leaderboard on their Performance page
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Enable Leaderboard</p>
+              <p className="text-sm text-muted-foreground">
+                Staff can see how they rank against their peers
+              </p>
+            </div>
+            <Button
+              variant={hotel.leaderboardEnabled ? 'default' : 'outline'}
+              onClick={() => setHotel({ ...hotel, leaderboardEnabled: !hotel.leaderboardEnabled })}
+            >
+              {hotel.leaderboardEnabled ? 'Enabled' : 'Disabled'}
+            </Button>
+          </div>
+          {hotel.leaderboardEnabled && (
+            <div className="flex items-center justify-between border-t pt-4">
+              <div>
+                <p className="font-medium">Anonymize Names</p>
+                <p className="text-sm text-muted-foreground">
+                  Hide staff names on the leaderboard (each person still sees their own)
+                </p>
+              </div>
+              <Button
+                variant={hotel.leaderboardAnonymized ? 'default' : 'outline'}
+                onClick={() =>
+                  setHotel({ ...hotel, leaderboardAnonymized: !hotel.leaderboardAnonymized })
+                }
+              >
+                {hotel.leaderboardAnonymized ? 'Anonymized' : 'Visible'}
               </Button>
             </div>
           )}
