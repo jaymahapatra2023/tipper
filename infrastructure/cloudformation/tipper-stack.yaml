@@ -1,0 +1,400 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Tipper application stack — Next.js frontend on Amplify, Express API on EC2 (t3.micro),
+  secrets in SSM Parameter Store, email via SES. Connects to an existing Aurora PostgreSQL cluster.
+
+# ---------------------------------------------------------------------------
+# Parameters
+# ---------------------------------------------------------------------------
+Parameters:
+  # ---- Database ----
+  DatabaseHost:
+    Type: String
+    Description: Aurora PostgreSQL cluster endpoint
+  DatabasePort:
+    Type: Number
+    Default: 5432
+    Description: PostgreSQL port
+  DatabaseName:
+    Type: String
+    Default: tipper
+    Description: Database name on the Aurora cluster
+  DatabaseUsername:
+    Type: String
+    Default: tipper_app
+    Description: Database username
+  DatabasePassword:
+    Type: String
+    NoEcho: true
+    Description: Database password
+
+  # ---- App secrets ----
+  JwtAccessSecret:
+    Type: String
+    NoEcho: true
+    Description: JWT access token signing secret
+  JwtRefreshSecret:
+    Type: String
+    NoEcho: true
+    Description: JWT refresh token signing secret
+  MfaEncryptionKey:
+    Type: String
+    NoEcho: true
+    Description: 64-character hex key for AES-256-GCM MFA encryption
+
+  # ---- Stripe ----
+  StripeSecretKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: Stripe secret key (leave empty to skip)
+  StripeWebhookSecret:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: Stripe webhook signing secret
+  StripePublishableKey:
+    Type: String
+    Default: ''
+    Description: Stripe publishable key (public, passed to frontend)
+
+  # ---- SES ----
+  SesFromEmail:
+    Type: String
+    Default: noreply@tipper.app
+    Description: Verified sender email address for SES
+
+  # ---- EC2 ----
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 key pair name for SSH access
+
+  # ---- GitHub / Amplify ----
+  GitHubToken:
+    Type: String
+    NoEcho: true
+    Description: GitHub personal access token with repo scope for Amplify
+  GitHubRepo:
+    Type: String
+    Description: GitHub repo URL (e.g. https://github.com/user/tipper)
+  GitHubBranch:
+    Type: String
+    Default: main
+    Description: Git branch to deploy
+
+  # ---- Networking ----
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC where the EC2 instance will be launched
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public subnet for the EC2 instance
+  DbSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group of the Aurora cluster (an inbound rule will be added)
+
+# ---------------------------------------------------------------------------
+# Resources
+# ---------------------------------------------------------------------------
+Resources:
+  # ======== SSM Parameter Store (SecureString — free tier) ========
+  SsmDatabaseUrl:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /tipper/prod/database-url
+      Type: String
+      Value: !Sub >-
+        postgresql://${DatabaseUsername}:${DatabasePassword}@${DatabaseHost}:${DatabasePort}/${DatabaseName}?schema=public
+      Description: PostgreSQL connection string
+
+  SsmJwtAccessSecret:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /tipper/prod/jwt-access-secret
+      Type: String
+      Value: !Ref JwtAccessSecret
+      Description: JWT access token secret
+
+  SsmJwtRefreshSecret:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /tipper/prod/jwt-refresh-secret
+      Type: String
+      Value: !Ref JwtRefreshSecret
+      Description: JWT refresh token secret
+
+  SsmMfaEncryptionKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /tipper/prod/mfa-encryption-key
+      Type: String
+      Value: !Ref MfaEncryptionKey
+      Description: MFA AES-256-GCM encryption key
+
+  SsmStripeSecretKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /tipper/prod/stripe-secret-key
+      Type: String
+      Value: !Ref StripeSecretKey
+      Description: Stripe secret key
+
+  SsmStripeWebhookSecret:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /tipper/prod/stripe-webhook-secret
+      Type: String
+      Value: !Ref StripeWebhookSecret
+      Description: Stripe webhook signing secret
+
+  # ======== Security Groups ========
+  TipperApiSg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Tipper API EC2 instance
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 4000
+          ToPort: 4000
+          CidrIp: 0.0.0.0/0
+          Description: API traffic
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH access
+      Tags:
+        - Key: Name
+          Value: tipper-api-sg
+
+  # Allow EC2 → Aurora on the DB port
+  DbIngressFromApi:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref DbSecurityGroupId
+      IpProtocol: tcp
+      FromPort: !Ref DatabasePort
+      ToPort: !Ref DatabasePort
+      SourceSecurityGroupId: !GetAtt TipperApiSg.GroupId
+      Description: Allow Tipper API EC2 to reach Aurora
+
+  # ======== IAM Role for EC2 ========
+  TipperApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: tipper-api-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: tipper-api-ssm-read
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/tipper/prod/*
+        - PolicyName: tipper-api-ses-send
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ses:SendEmail
+                  - ses:SendRawEmail
+                Resource: '*'
+
+  TipperApiInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref TipperApiRole
+
+  # ======== Elastic IP ========
+  TipperApiEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: tipper-api-eip
+
+  TipperApiEipAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt TipperApiEip.AllocationId
+      InstanceId: !Ref TipperApiInstance
+
+  # ======== EC2 Instance ========
+  TipperApiInstance:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - SsmDatabaseUrl
+      - SsmJwtAccessSecret
+      - SsmJwtRefreshSecret
+      - SsmMfaEncryptionKey
+      - SsmStripeSecretKey
+      - SsmStripeWebhookSecret
+    Properties:
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      InstanceType: t3.micro
+      KeyName: !Ref KeyPairName
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !GetAtt TipperApiSg.GroupId
+      IamInstanceProfile: !Ref TipperApiInstanceProfile
+      Tags:
+        - Key: Name
+          Value: tipper-api
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euo pipefail
+          exec > /var/log/tipper-setup.log 2>&1
+
+          echo "=== Installing Node.js 20 ==="
+          dnf module install -y nodejs:20/common
+
+          echo "=== Installing pnpm & PM2 ==="
+          npm install -g pnpm@10 pm2
+
+          echo "=== Cloning repo ==="
+          cd /home/ec2-user
+          REPO_URL="${GitHubRepo}"
+          # Insert token for private repo auth
+          AUTHED_URL=$(echo "$REPO_URL" | sed "s|https://|https://${GitHubToken}@|")
+          git clone --branch ${GitHubBranch} --depth 1 "$AUTHED_URL" tipper
+          chown -R ec2-user:ec2-user tipper
+          cd tipper
+
+          echo "=== Installing dependencies ==="
+          sudo -u ec2-user pnpm install --frozen-lockfile
+
+          echo "=== Generating Prisma client ==="
+          sudo -u ec2-user pnpm --filter @tipper/database exec prisma generate
+
+          echo "=== Building API ==="
+          sudo -u ec2-user pnpm --filter @tipper/api build
+
+          echo "=== Fetching secrets from SSM ==="
+          REGION="${AWS::Region}"
+          get_param() {
+            aws ssm get-parameter --name "$1" --region "$REGION" --query 'Parameter.Value' --output text
+          }
+
+          DATABASE_URL=$(get_param /tipper/prod/database-url)
+          JWT_ACCESS_SECRET=$(get_param /tipper/prod/jwt-access-secret)
+          JWT_REFRESH_SECRET=$(get_param /tipper/prod/jwt-refresh-secret)
+          MFA_ENCRYPTION_KEY=$(get_param /tipper/prod/mfa-encryption-key)
+          STRIPE_SECRET_KEY=$(get_param /tipper/prod/stripe-secret-key)
+          STRIPE_WEBHOOK_SECRET=$(get_param /tipper/prod/stripe-webhook-secret)
+
+          cat > /home/ec2-user/tipper/.env <<ENVEOF
+          NODE_ENV=production
+          API_PORT=4000
+          DATABASE_URL=$DATABASE_URL
+          JWT_ACCESS_SECRET=$JWT_ACCESS_SECRET
+          JWT_REFRESH_SECRET=$JWT_REFRESH_SECRET
+          MFA_ENCRYPTION_KEY=$MFA_ENCRYPTION_KEY
+          STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
+          STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET
+          AWS_REGION=$REGION
+          AWS_SES_FROM_EMAIL=${SesFromEmail}
+          CORS_ORIGIN=*
+          ENVEOF
+          chown ec2-user:ec2-user /home/ec2-user/tipper/.env
+
+          echo "=== Running Prisma migrations ==="
+          cd /home/ec2-user/tipper
+          sudo -u ec2-user pnpm --filter @tipper/database exec prisma migrate deploy
+
+          echo "=== Starting API with PM2 ==="
+          sudo -u ec2-user pm2 start apps/api/dist/index.js --name tipper-api
+          sudo -u ec2-user pm2 save
+
+          echo "=== Configuring PM2 startup ==="
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user
+
+          echo "=== Setup complete ==="
+
+  # ======== SES Email Identity ========
+  TipperSesIdentity:
+    Type: AWS::SES::EmailIdentity
+    Properties:
+      EmailIdentity: !Ref SesFromEmail
+
+  # ======== Amplify App ========
+  TipperAmplifyApp:
+    Type: AWS::Amplify::App
+    DependsOn: TipperApiEipAssociation
+    Properties:
+      Name: tipper-web
+      Platform: WEB_COMPUTE
+      Repository: !Ref GitHubRepo
+      AccessToken: !Ref GitHubToken
+      BuildSpec: |
+        version: 1
+        applications:
+          - frontend:
+              phases:
+                preBuild:
+                  commands:
+                    - npm install -g pnpm@10
+                    - pnpm install --frozen-lockfile
+                build:
+                  commands:
+                    - pnpm --filter @tipper/web build
+              artifacts:
+                baseDirectory: apps/web/.next
+                files:
+                  - '**/*'
+              cache:
+                paths:
+                  - node_modules/**/*
+            appRoot: .
+      EnvironmentVariables:
+        - Name: NEXT_PUBLIC_API_URL
+          Value: !Sub http://${TipperApiEip}:4000/api/v1
+        - Name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+          Value: !Ref StripePublishableKey
+        - Name: AMPLIFY_MONOREPO_APP_ROOT
+          Value: .
+
+  TipperAmplifyBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt TipperAmplifyApp.AppId
+      BranchName: !Ref GitHubBranch
+      EnableAutoBuild: true
+      Stage: PRODUCTION
+
+# ---------------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------------
+Outputs:
+  ApiUrl:
+    Description: Public URL of the Tipper API
+    Value: !Sub http://${TipperApiEip}:4000
+
+  AmplifyAppId:
+    Description: Amplify application ID
+    Value: !GetAtt TipperAmplifyApp.AppId
+
+  AmplifyDefaultDomain:
+    Description: Amplify default domain (visit after first build completes)
+    Value: !Sub https://${GitHubBranch}.${TipperAmplifyApp.DefaultDomain}
+
+  SesIdentity:
+    Description: SES email identity — check inbox to verify
+    Value: !Ref SesFromEmail
+
+  Ec2PublicIp:
+    Description: Elastic IP of the API server
+    Value: !Ref TipperApiEip
