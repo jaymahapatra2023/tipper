@@ -55,7 +55,12 @@
     "completed": "Terminé",
     "processing": "En cours de traitement",
     "failed": "Échoué",
-    "pending": "En attente"
+    "pending": "En attente",
+    "offlineBanner": "Vous êtes hors ligne. Vos données sont enregistrées.",
+    "backOnline": "Vous êtes de nouveau en ligne !",
+    "retrying": "Nouvelle tentative...",
+    "offline": "Hors ligne",
+    "online": "En ligne"
   },
   "nav": {
     "adminTitle": "Administration hôtelière",
@@ -456,6 +461,10 @@
     "tipMethod": "Méthode de pourboire : {method}",
     "tipMethodPerDay": "Par jour",
     "tipMethodFlat": "Forfaitaire",
-    "stay": "Séjour : {checkIn} – {checkOut}"
+    "stay": "Séjour : {checkIn} – {checkOut}",
+    "offlinePaymentMsg": "Le paiement nécessite une connexion internet. Les détails de votre pourboire sont enregistrés et seront envoyés lorsque vous serez de nouveau en ligne.",
+    "usingCachedData": "Utilisation des données de l'hôtel enregistrées",
+    "queuedForSubmission": "Pourboire en file d'attente — sera envoyé une fois en ligne",
+    "tipSubmitted": "Pourboire envoyé avec succès !"
   }
 }

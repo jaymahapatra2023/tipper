@@ -75,6 +75,27 @@ class ApiClient {
     return this.request<T>(path, { method: 'DELETE' });
   }
 
+  async postWithRetry<T>(path: string, body?: unknown, maxRetries = 3): Promise<ApiResponse<T>> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const res = await this.post<T>(path, body);
+        return res;
+      } catch (err) {
+        // Only retry on network errors (TypeError: Failed to fetch), not on 4xx/5xx
+        if (err instanceof TypeError && err.message.includes('fetch')) {
+          lastError = err;
+          if (attempt < maxRetries) {
+            await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+          }
+        } else {
+          throw err;
+        }
+      }
+    }
+    throw lastError;
+  }
+
   async downloadBlob(path: string): Promise<Blob> {
     const headers: Record<string, string> = {};
     if (this.accessToken) {

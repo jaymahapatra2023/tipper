@@ -27,6 +27,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <AssistantWrapper />
           </AuthProvider>
         </NextIntlClientProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js')})}`,
+          }}
+        />
       </body>
     </html>
   );

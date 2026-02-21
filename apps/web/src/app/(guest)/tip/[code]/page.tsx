@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   MapPin,
   Star,
+  WifiOff,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
@@ -36,6 +37,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TipStatus, DEFAULT_FEEDBACK_TAGS } from '@tipper/shared';
 import type { QrResolveResponse, TipConfirmation } from '@tipper/shared';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useFormPersist } from '@/hooks/use-form-persist';
+import { useTipQueue } from '@/hooks/use-tip-queue';
 
 const tipFormSchema = z.object({
   roomNumber: z.string().min(1, 'Room number is required'),
@@ -70,11 +74,13 @@ function PaymentForm({
   onProcessTip,
   onSuccess,
   onError,
+  isOnline,
 }: {
   tipData: TipFormData;
   onProcessTip: (data: TipFormData) => Promise<string | null>;
   onSuccess: () => void;
   onError: (message: string) => void;
+  isOnline: boolean;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -130,12 +136,18 @@ function PaymentForm({
     <div className="space-y-4">
       <PaymentElement />
       {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
+      {!isOnline && (
+        <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
+          <WifiOff className="h-4 w-4 shrink-0" />
+          <span>{t('offlinePaymentMsg')}</span>
+        </div>
+      )}
       <Button
         type="button"
         variant="gold"
         size="xl"
         className="w-full"
-        disabled={!stripe || processing}
+        disabled={!stripe || processing || !isOnline}
         onClick={handlePayment}
       >
         {processing ? tc('processing') : t('completePayment')}
@@ -144,18 +156,45 @@ function PaymentForm({
   );
 }
 
+const QR_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+
+function getCachedQr(code: string): QrResolveResponse | null {
+  try {
+    const raw = localStorage.getItem(`tipper_qr_${code}`);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > QR_CACHE_EXPIRY) {
+      localStorage.removeItem(`tipper_qr_${code}`);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function cacheQrData(code: string, data: QrResolveResponse) {
+  try {
+    localStorage.setItem(`tipper_qr_${code}`, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch {
+    // localStorage full
+  }
+}
+
 export default function TipPage() {
   const params = useParams();
   const code = params.code as string;
   const t = useTranslations('guest');
   const tc = useTranslations('common');
   const locale = useLocale();
+  const { isOnline } = useOnlineStatus();
 
   const [step, setStep] = useState<Step>('loading');
   const [error, setError] = useState('');
   const [hotelInfo, setHotelInfo] = useState<QrResolveResponse | null>(null);
   const [confirmation, setConfirmation] = useState<TipConfirmation | null>(null);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [usingCachedData, setUsingCachedData] = useState(false);
   const [guestLocation, setGuestLocation] = useState<{
     lat: number;
     lon: number;
@@ -191,52 +230,128 @@ export default function TipPage() {
     },
   });
 
-  useEffect(() => {
-    api.get<QrResolveResponse>(`/qr/${code}`).then(async (res) => {
-      if (res.success && res.data) {
-        setHotelInfo(res.data);
-        form.setValue('roomNumber', res.data.roomNumber);
-        setStep('stayDetails');
+  const { clear: clearFormPersist } = useFormPersist(`tipper_tip_${code}`, form);
 
-        // Request geolocation if geofence is enabled
-        if (
-          res.data.geofenceEnabled &&
-          res.data.geofenceLatitude != null &&
-          res.data.geofenceLongitude != null
-        ) {
-          setLocationStatus('checking');
-          const position = await requestGeolocation();
-          if (position) {
-            setGuestLocation({
-              lat: position.latitude,
-              lon: position.longitude,
-              accuracy: position.accuracy,
-            });
-            const result = verifyLocationClient(
-              position.latitude,
-              position.longitude,
-              res.data.geofenceLatitude,
-              res.data.geofenceLongitude,
-              res.data.geofenceRadius ?? 500,
-            );
-            if (result.verified) {
-              setLocationStatus('verified');
+  const { queueTip } = useTipQueue();
+
+  // Persist step and selectedAmount
+  useEffect(() => {
+    if (step !== 'loading' && step !== 'error') {
+      try {
+        localStorage.setItem(`tipper_step_${code}`, step);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [step, code]);
+
+  useEffect(() => {
+    if (selectedAmount !== null) {
+      try {
+        localStorage.setItem(`tipper_amount_${code}`, String(selectedAmount));
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [selectedAmount, code]);
+
+  // Restore persisted step and amount on mount
+  useEffect(() => {
+    try {
+      const savedStep = localStorage.getItem(`tipper_step_${code}`);
+      if (savedStep && ['stayDetails', 'amount', 'payment'].includes(savedStep)) {
+        // Will be applied after hotel info loads
+      }
+      const savedAmount = localStorage.getItem(`tipper_amount_${code}`);
+      if (savedAmount) {
+        setSelectedAmount(parseInt(savedAmount, 10));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [code]);
+
+  function applyQrData(data: QrResolveResponse) {
+    setHotelInfo(data);
+    form.setValue('roomNumber', data.roomNumber);
+    // Restore persisted step if available
+    try {
+      const savedStep = localStorage.getItem(`tipper_step_${code}`);
+      if (savedStep && ['stayDetails', 'amount'].includes(savedStep)) {
+        setStep(savedStep as Step);
+      } else {
+        setStep('stayDetails');
+      }
+    } catch {
+      setStep('stayDetails');
+    }
+  }
+
+  useEffect(() => {
+    api
+      .get<QrResolveResponse>(`/qr/${code}`)
+      .then(async (res) => {
+        if (res.success && res.data) {
+          cacheQrData(code, res.data);
+          applyQrData(res.data);
+
+          // Request geolocation if geofence is enabled
+          if (
+            res.data.geofenceEnabled &&
+            res.data.geofenceLatitude != null &&
+            res.data.geofenceLongitude != null
+          ) {
+            setLocationStatus('checking');
+            const position = await requestGeolocation();
+            if (position) {
+              setGuestLocation({
+                lat: position.latitude,
+                lon: position.longitude,
+                accuracy: position.accuracy,
+              });
+              const result = verifyLocationClient(
+                position.latitude,
+                position.longitude,
+                res.data.geofenceLatitude,
+                res.data.geofenceLongitude,
+                res.data.geofenceRadius ?? 500,
+              );
+              if (result.verified) {
+                setLocationStatus('verified');
+              } else {
+                setLocationStatus('unverified');
+                setLocationWarning(
+                  `You appear to be ${formatDistance(result.distance)} from ${res.data.hotelName}. You can still leave a tip.`,
+                );
+              }
             } else {
               setLocationStatus('unverified');
-              setLocationWarning(
-                `You appear to be ${formatDistance(result.distance)} from ${res.data.hotelName}. You can still leave a tip.`,
-              );
+              setLocationWarning('Location access was denied. You can still leave a tip.');
             }
+          }
+        } else {
+          // API returned error — try cache
+          const cached = getCachedQr(code);
+          if (cached) {
+            setUsingCachedData(true);
+            applyQrData(cached);
           } else {
-            setLocationStatus('unverified');
-            setLocationWarning('Location access was denied. You can still leave a tip.');
+            setError(res.error?.message || 'Invalid QR code');
+            setStep('error');
           }
         }
-      } else {
-        setError(res.error?.message || 'Invalid QR code');
-        setStep('error');
-      }
-    });
+      })
+      .catch(() => {
+        // Network error — try cache
+        const cached = getCachedQr(code);
+        if (cached) {
+          setUsingCachedData(true);
+          applyQrData(cached);
+        } else {
+          setError('Unable to load. Please check your connection and try again.');
+          setStep('error');
+        }
+      });
   }, [code]); // only re-run when code changes
 
   const tipMethod = form.watch('tipMethod');
@@ -264,11 +379,7 @@ export default function TipPage() {
   async function handleSubmit(data: TipFormData): Promise<string | null> {
     if (!hotelInfo) return null;
 
-    const res = await api.post<{
-      tipId: string;
-      clientSecret: string | null;
-      receiptToken?: string;
-    }>('/tips', {
+    const tipPayload = {
       qrCode: code,
       roomId: hotelInfo.roomId,
       guestName: data.guestName || undefined,
@@ -282,23 +393,46 @@ export default function TipPage() {
       guestLatitude: guestLocation?.lat,
       guestLongitude: guestLocation?.lon,
       guestLocationAccuracy: guestLocation?.accuracy,
-    });
+    };
 
-    if (res.success && res.data) {
-      setTipData({
-        tipId: res.data.tipId,
-        amount: data.totalAmount,
-        receiptToken: res.data.receiptToken ?? undefined,
-      });
-      return res.data.clientSecret;
-    } else {
-      setError(res.error?.message || 'Failed to process tip');
+    try {
+      const res = await api.postWithRetry<{
+        tipId: string;
+        clientSecret: string | null;
+        receiptToken?: string;
+      }>('/tips', tipPayload);
+
+      if (res.success && res.data) {
+        setTipData({
+          tipId: res.data.tipId,
+          amount: data.totalAmount,
+          receiptToken: res.data.receiptToken ?? undefined,
+        });
+        return res.data.clientSecret;
+      } else {
+        setError(res.error?.message || 'Failed to process tip');
+        return null;
+      }
+    } catch {
+      // All retries failed — queue for later if offline
+      if (!isOnline) {
+        queueTip(tipPayload);
+      }
+      setError("Network error. Your tip has been saved and will submit when you're back online.");
       return null;
     }
   }
 
   function handlePaymentSuccess() {
     if (!hotelInfo || !tipData) return;
+    // Clear all persisted offline data
+    clearFormPersist();
+    try {
+      localStorage.removeItem(`tipper_step_${code}`);
+      localStorage.removeItem(`tipper_amount_${code}`);
+    } catch {
+      /* ignore */
+    }
     setConfirmation({
       tipId: tipData.tipId,
       hotelName: hotelInfo.hotelName,
@@ -580,6 +714,7 @@ export default function TipPage() {
                     onProcessTip={handleSubmit}
                     onSuccess={handlePaymentSuccess}
                     onError={(msg) => setError(msg)}
+                    isOnline={isOnline}
                   />
                 </Elements>
               </CardContent>
@@ -626,6 +761,13 @@ export default function TipPage() {
                   primaryColor={hotelInfo?.primaryColor}
                   secondaryColor={hotelInfo?.secondaryColor}
                 />
+
+                {usingCachedData && (
+                  <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm text-blue-300">
+                    <WifiOff className="h-4 w-4" />
+                    <span>{t('usingCachedData')}</span>
+                  </div>
+                )}
 
                 {locationStatus === 'checking' && (
                   <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm text-blue-300">

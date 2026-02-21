@@ -55,7 +55,12 @@
     "completed": "Completado",
     "processing": "Procesando",
     "failed": "Fallido",
-    "pending": "Pendiente"
+    "pending": "Pendiente",
+    "offlineBanner": "Estás sin conexión. Tus datos están guardados.",
+    "backOnline": "¡Estás conectado de nuevo!",
+    "retrying": "Reintentando...",
+    "offline": "Sin conexión",
+    "online": "En línea"
   },
   "nav": {
     "adminTitle": "Administración del Hotel",
@@ -456,6 +461,10 @@
     "tipMethod": "Método de propina: {method}",
     "tipMethodPerDay": "Por Día",
     "tipMethodFlat": "Fijo",
-    "stay": "Estadía: {checkIn} – {checkOut}"
+    "stay": "Estadía: {checkIn} – {checkOut}",
+    "offlinePaymentMsg": "El pago requiere internet. Los datos de su propina están guardados y se enviarán cuando vuelva a estar en línea.",
+    "usingCachedData": "Usando datos del hotel guardados",
+    "queuedForSubmission": "Propina en cola — se enviará cuando esté en línea",
+    "tipSubmitted": "¡Propina enviada con éxito!"
   }
 }

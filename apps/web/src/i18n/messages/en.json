@@ -55,7 +55,12 @@
     "completed": "Completed",
     "processing": "Processing",
     "failed": "Failed",
-    "pending": "Pending"
+    "pending": "Pending",
+    "offlineBanner": "You're offline. Your data is saved.",
+    "backOnline": "You're back online!",
+    "retrying": "Retrying...",
+    "offline": "Offline",
+    "online": "Online"
   },
   "nav": {
     "adminTitle": "Hotel Admin",
@@ -456,6 +461,10 @@
     "tipMethod": "Tip method: {method}",
     "tipMethodPerDay": "Per Day",
     "tipMethodFlat": "Flat",
-    "stay": "Stay: {checkIn} – {checkOut}"
+    "stay": "Stay: {checkIn} – {checkOut}",
+    "offlinePaymentMsg": "Payment requires internet. Your tip details are saved and will submit when you're back online.",
+    "usingCachedData": "Using saved hotel data",
+    "queuedForSubmission": "Tip queued — will submit when online",
+    "tipSubmitted": "Tip submitted successfully!"
   }
 }
