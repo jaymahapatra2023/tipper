@@ -75,7 +75,8 @@ async function main() {
       suggestedAmounts: [500, 1000, 1500],
       minTipAmount: 100,
       maxTipAmount: 50000,
-      poolingEnabled: false,
+      poolingEnabled: true,
+      poolingType: 'weighted',
       leaderboardEnabled: true,
       primaryColor: '#c9a84c',
       secondaryColor: '#0f1b2d',
@@ -142,14 +143,16 @@ async function main() {
     staffUsers.push(user);
   }
 
-  // Create staff members linked to hotel
+  // Create staff members linked to hotel with weighted pool config
+  const staffWeights = [1.5, 1.0, 0.75]; // Maria=supervisor, James=standard, Ana=trainee
   const staffMembers = [];
-  for (const user of staffUsers) {
+  for (let i = 0; i < staffUsers.length; i++) {
     const member = await prisma.staffMember.create({
       data: {
-        userId: user.id,
+        userId: staffUsers[i].id,
         hotelId: hotel.id,
-        poolOptIn: false,
+        poolOptIn: true,
+        poolWeight: staffWeights[i],
       },
     });
     staffMembers.push(member);

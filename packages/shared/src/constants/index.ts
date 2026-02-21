@@ -44,6 +44,12 @@ export const PAGINATION_DEFAULTS = {
   maxLimit: 100,
 };
 
+export const POOL_WEIGHT_PRESETS = [
+  { label: 'Supervisor', weight: 1.5 },
+  { label: 'Standard', weight: 1.0 },
+  { label: 'Trainee', weight: 0.75 },
+] as const;
+
 export const STAFF_MILESTONES = [
   {
     id: 'tips_10',

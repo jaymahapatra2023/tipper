@@ -241,6 +241,14 @@ export interface StaffPerformanceResponse {
   leaderboard?: LeaderboardEntry[];
 }
 
+export interface PoolDistributionPreview {
+  staffMemberId: string;
+  staffName: string;
+  weight: number;
+  sharePercent: number;
+  shareAmount: number;
+}
+
 export interface ReceiptData {
   tipId: string;
   hotelName: string;

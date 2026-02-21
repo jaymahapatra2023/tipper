@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Users } from 'lucide-react';
-import { staffCreateSchema, type StaffCreateInput } from '@tipper/shared';
+import { Users, Weight } from 'lucide-react';
+import { staffCreateSchema, type StaffCreateInput, POOL_WEIGHT_PRESETS } from '@tipper/shared';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,28 +19,56 @@ interface StaffMember {
   id: string;
   isActive: boolean;
   poolOptIn: boolean;
+  poolWeight: number;
   user: { id: string; email: string; name: string };
+}
+
+interface HotelInfo {
+  poolingEnabled: boolean;
+  poolingType: string | null;
 }
 
 export default function AdminStaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [hotel, setHotel] = useState<HotelInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [resettingPassword, setResettingPassword] = useState<string | null>(null);
+  const [editingWeight, setEditingWeight] = useState<string | null>(null);
+  const [weightValue, setWeightValue] = useState<number>(1.0);
+
+  const isWeighted = hotel?.poolingEnabled && hotel?.poolingType === 'weighted';
 
   const form = useForm<StaffCreateInput>({
     resolver: zodResolver(staffCreateSchema),
   });
 
   useEffect(() => {
-    loadStaff();
+    loadData();
   }, []);
 
-  async function loadStaff() {
+  async function loadData() {
     setLoading(true);
+    const [staffRes, hotelRes] = await Promise.all([
+      api.get<StaffMember[]>('/admin/staff'),
+      api.get<HotelInfo>('/admin/hotel'),
+    ]);
+    if (staffRes.success && staffRes.data) setStaff(staffRes.data);
+    if (hotelRes.success && hotelRes.data) setHotel(hotelRes.data);
+    setLoading(false);
+  }
+
+  async function loadStaff() {
     const res = await api.get<StaffMember[]>('/admin/staff');
     if (res.success && res.data) setStaff(res.data);
-    setLoading(false);
+  }
+
+  async function updateWeight(staffMemberId: string, poolWeight: number) {
+    const res = await api.put<StaffMember>(`/admin/staff/${staffMemberId}/weight`, { poolWeight });
+    if (res.success) {
+      setStaff((prev) => prev.map((s) => (s.id === staffMemberId ? { ...s, poolWeight } : s)));
+      setEditingWeight(null);
+    }
   }
 
   async function onSubmit(data: StaffCreateInput) {
@@ -127,6 +155,59 @@ export default function AdminStaffPage() {
                     <p className="text-sm text-muted-foreground">{s.user.email}</p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {isWeighted &&
+                      s.isActive &&
+                      (editingWeight === s.id ? (
+                        <div className="flex items-center gap-1.5">
+                          <Input
+                            type="number"
+                            min={0.1}
+                            max={10}
+                            step={0.25}
+                            value={weightValue}
+                            onChange={(e) => setWeightValue(parseFloat(e.target.value) || 1.0)}
+                            className="w-20 h-8 text-sm"
+                          />
+                          {POOL_WEIGHT_PRESETS.map((p) => (
+                            <Button
+                              key={p.label}
+                              variant={weightValue === p.weight ? 'default' : 'outline'}
+                              size="sm"
+                              className="h-7 text-xs px-2"
+                              onClick={() => setWeightValue(p.weight)}
+                            >
+                              {p.label}
+                            </Button>
+                          ))}
+                          <Button
+                            size="sm"
+                            className="h-7"
+                            onClick={() => updateWeight(s.id, weightValue)}
+                          >
+                            Save
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7"
+                            onClick={() => setEditingWeight(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="cursor-pointer hover:bg-muted"
+                          onClick={() => {
+                            setEditingWeight(s.id);
+                            setWeightValue(s.poolWeight);
+                          }}
+                        >
+                          <Weight className="mr-1 h-3 w-3" />
+                          {s.poolWeight}x
+                        </Badge>
+                      ))}
                     <Badge variant={s.isActive ? 'success' : 'secondary'}>
                       {s.isActive ? 'Active' : 'Inactive'}
                     </Badge>

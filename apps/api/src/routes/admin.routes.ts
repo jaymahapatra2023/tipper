@@ -7,6 +7,7 @@ import {
   hotelBrandingSchema,
   roomBulkGenerateSchema,
   staffCreateSchema,
+  staffWeightUpdateSchema,
   roomCreateSchema,
   assignmentCreateSchema,
   analyticsExportSchema,
@@ -186,6 +187,33 @@ router.delete('/staff/:id', async (req: Request, res: Response, next: NextFuncti
   try {
     await adminService.deactivateStaff(req.user!.userId, req.params.id as string, getClientIp(req));
     sendSuccess(res, { message: 'Staff member deactivated' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put(
+  '/staff/:id/weight',
+  validate(staffWeightUpdateSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await adminService.updateStaffWeight(
+        req.user!.userId,
+        req.params.id as string,
+        req.body.poolWeight,
+        getClientIp(req),
+      );
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get('/pool/preview', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await adminService.getPoolPreview(req.user!.userId);
+    sendSuccess(res, result);
   } catch (err) {
     next(err);
   }

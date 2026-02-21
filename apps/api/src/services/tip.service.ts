@@ -220,17 +220,44 @@ export class TipService {
 
       if (poolMembers.length === 0) return;
 
-      const perPerson = Math.floor(tip.netAmount / poolMembers.length);
-      const remainder = tip.netAmount - perPerson * poolMembers.length;
+      if (tip.hotel.poolingType === 'weighted') {
+        // Weighted distribution based on poolWeight
+        const totalWeight = poolMembers.reduce((sum, m) => sum + m.poolWeight, 0);
+        let distributed = 0;
+        const shares: { id: string; amount: number; weight: number }[] = [];
 
-      for (let i = 0; i < poolMembers.length; i++) {
-        await prisma.tipDistribution.create({
-          data: {
-            tipId,
-            staffMemberId: poolMembers[i].id,
-            amount: perPerson + (i === 0 ? remainder : 0),
-          },
-        });
+        for (const member of poolMembers) {
+          const amount = Math.floor(tip.netAmount * (member.poolWeight / totalWeight));
+          shares.push({ id: member.id, amount, weight: member.poolWeight });
+          distributed += amount;
+        }
+
+        // Give remainder to highest-weighted member
+        const remainder = tip.netAmount - distributed;
+        if (remainder > 0) {
+          const highest = shares.reduce((a, b) => (a.weight >= b.weight ? a : b));
+          highest.amount += remainder;
+        }
+
+        for (const share of shares) {
+          await prisma.tipDistribution.create({
+            data: { tipId, staffMemberId: share.id, amount: share.amount },
+          });
+        }
+      } else {
+        // Equal split (default)
+        const perPerson = Math.floor(tip.netAmount / poolMembers.length);
+        const remainder = tip.netAmount - perPerson * poolMembers.length;
+
+        for (let i = 0; i < poolMembers.length; i++) {
+          await prisma.tipDistribution.create({
+            data: {
+              tipId,
+              staffMemberId: poolMembers[i].id,
+              amount: perPerson + (i === 0 ? remainder : 0),
+            },
+          });
+        }
       }
     } else {
       // Direct to assigned staff

@@ -291,6 +291,11 @@ export const notificationQuerySchema = z.object({
   unreadOnly: z.coerce.boolean().optional(),
 });
 
+// Staff weight schema
+export const staffWeightUpdateSchema = z.object({
+  poolWeight: z.number().min(0.1).max(10),
+});
+
 // Type exports from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -314,3 +319,4 @@ export type FeedbackUpdateInput = z.infer<typeof feedbackUpdateSchema>;
 export type NotificationQueryInput = z.infer<typeof notificationQuerySchema>;
 export type HotelBrandingInput = z.infer<typeof hotelBrandingSchema>;
 export type TipFeedbackInput = z.infer<typeof tipFeedbackSchema>;
+export type StaffWeightUpdateInput = z.infer<typeof staffWeightUpdateSchema>;

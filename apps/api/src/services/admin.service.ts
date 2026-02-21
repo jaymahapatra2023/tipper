@@ -567,6 +567,53 @@ export class AdminService {
     return hotel;
   }
 
+  async updateStaffWeight(
+    userId: string,
+    staffMemberId: string,
+    poolWeight: number,
+    ipAddress?: string,
+  ) {
+    const admin = await this.getHotelAdmin(userId);
+    const staff = await prisma.staffMember.findUnique({ where: { id: staffMemberId } });
+    if (!staff || staff.hotelId !== admin.hotelId) throw new NotFoundError('Staff member');
+
+    const result = await prisma.staffMember.update({
+      where: { id: staffMemberId },
+      data: { poolWeight },
+      include: { user: { select: { id: true, email: true, name: true } } },
+    });
+    logAudit({
+      userId,
+      action: 'staff_weight_update',
+      entityType: 'staff',
+      entityId: staffMemberId,
+      metadata: { poolWeight },
+      ipAddress,
+    });
+    return result;
+  }
+
+  async getPoolPreview(userId: string) {
+    const admin = await this.getHotelAdmin(userId);
+    const members = await prisma.staffMember.findMany({
+      where: { hotelId: admin.hotelId, poolOptIn: true, isActive: true },
+      include: { user: { select: { name: true } } },
+    });
+
+    if (members.length === 0) return [];
+
+    const sampleAmount = 1000; // $10.00 in cents
+    const totalWeight = members.reduce((sum, m) => sum + m.poolWeight, 0);
+
+    return members.map((m) => ({
+      staffMemberId: m.id,
+      staffName: m.user.name,
+      weight: m.poolWeight,
+      sharePercent: Math.round((m.poolWeight / totalWeight) * 1000) / 10,
+      shareAmount: Math.floor(sampleAmount * (m.poolWeight / totalWeight)),
+    }));
+  }
+
   private async getHotelAdmin(userId: string) {
     const admin = await prisma.hotelAdmin.findFirst({ where: { userId } });
     if (!admin) throw new ForbiddenError('Not a hotel admin');

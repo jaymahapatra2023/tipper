@@ -12,7 +12,9 @@ import {
   Plus,
   X,
   Trophy,
+  Weight,
 } from 'lucide-react';
+import type { PoolDistributionPreview } from '@tipper/shared';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -75,6 +77,7 @@ function AdminSettingsContent() {
   const [feedbackTags, setFeedbackTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [tagsSaving, setTagsSaving] = useState(false);
+  const [poolPreview, setPoolPreview] = useState<PoolDistributionPreview[]>([]);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -89,6 +92,11 @@ function AdminSettingsContent() {
         setBrandingPrimary(hotelRes.data.primaryColor || '');
         setBrandingSecondary(hotelRes.data.secondaryColor || '');
         setFeedbackTags(hotelRes.data.feedbackTags || []);
+        if (hotelRes.data.poolingEnabled && hotelRes.data.poolingType === 'weighted') {
+          api.get<PoolDistributionPreview[]>('/admin/pool/preview').then((res) => {
+            if (res.success && res.data) setPoolPreview(res.data);
+          });
+        }
       }
       if (stripeRes.success && stripeRes.data) setStripeStatus(stripeRes.data);
       if (meRes.success && meRes.data) setMfaEnabled(meRes.data.mfaEnabled ?? false);
@@ -581,19 +589,71 @@ function AdminSettingsContent() {
             </Button>
           </div>
           {hotel.poolingEnabled && (
-            <div className="flex gap-2">
-              <Button
-                variant={hotel.poolingType === 'equal' ? 'default' : 'outline'}
-                onClick={() => setHotel({ ...hotel, poolingType: 'equal' })}
-              >
-                Equal Split
-              </Button>
-              <Button
-                variant={hotel.poolingType === 'weighted' ? 'default' : 'outline'}
-                onClick={() => setHotel({ ...hotel, poolingType: 'weighted' })}
-              >
-                Weighted
-              </Button>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Button
+                  variant={hotel.poolingType === 'equal' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setHotel({ ...hotel, poolingType: 'equal' });
+                    setPoolPreview([]);
+                  }}
+                >
+                  Equal Split
+                </Button>
+                <Button
+                  variant={hotel.poolingType === 'weighted' ? 'default' : 'outline'}
+                  onClick={() => {
+                    setHotel({ ...hotel, poolingType: 'weighted' });
+                    api.get<PoolDistributionPreview[]>('/admin/pool/preview').then((res) => {
+                      if (res.success && res.data) setPoolPreview(res.data);
+                    });
+                  }}
+                >
+                  Weighted
+                </Button>
+              </div>
+              {hotel.poolingType === 'weighted' && poolPreview.length > 0 && (
+                <div className="rounded-lg border">
+                  <div className="border-b bg-muted/50 px-4 py-2.5">
+                    <p className="text-sm font-medium flex items-center gap-1.5">
+                      <Weight className="h-4 w-4" />
+                      Pool Distribution Preview (based on $10.00 tip)
+                    </p>
+                  </div>
+                  <div className="divide-y">
+                    {poolPreview.map((p) => (
+                      <div
+                        key={p.staffMemberId}
+                        className="flex items-center justify-between px-4 py-2.5 text-sm"
+                      >
+                        <span>{p.staffName}</span>
+                        <div className="flex items-center gap-4">
+                          <Badge variant="outline">{p.weight}x</Badge>
+                          <span className="w-16 text-right text-muted-foreground">
+                            {p.sharePercent}%
+                          </span>
+                          <span className="w-16 text-right font-medium">
+                            {formatCurrency(p.shareAmount)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+                    Edit individual weights on the{' '}
+                    <a href="/admin-staff" className="underline hover:text-foreground">
+                      Staff Management
+                    </a>{' '}
+                    page.
+                  </div>
+                </div>
+              )}
+              {hotel.poolingType === 'weighted' && poolPreview.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No staff have opted in to pooling yet. Staff must opt in to appear in the weighted
+                  distribution.
+                </p>
+              )}
             </div>
           )}
         </CardContent>

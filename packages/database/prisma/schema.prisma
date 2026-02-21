@@ -191,6 +191,7 @@ model StaffMember {
   stripeAccountId  String?  @map("stripe_account_id")
   stripeOnboarded  Boolean  @default(false) @map("stripe_onboarded")
   poolOptIn        Boolean  @default(false) @map("pool_opt_in")
+  poolWeight       Float    @default(1.0) @map("pool_weight")
   isActive         Boolean  @default(true) @map("is_active")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
