@@ -48,25 +48,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch full user profile (includes hotel branding) from /auth/me
+  const fetchProfile = useCallback(async (): Promise<User> => {
+    const res = await api.get<User>('/auth/me');
+    if (res.success && res.data) {
+      setUser(res.data);
+      return res.data;
+    }
+    throw new Error('Failed to fetch profile');
+  }, []);
+
   useEffect(() => {
     // Only attempt to fetch current user if we have a token
     if (!api.hasToken()) {
       setIsLoading(false);
       return;
     }
-    api
-      .get<User>('/auth/me')
-      .then((res) => {
-        if (res.success && res.data) {
-          setUser(res.data);
-        }
-      })
+    fetchProfile()
       .catch(() => {
         // Token expired or invalid — clear it
         api.setToken(null);
       })
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [fetchProfile]);
 
   const login = useCallback(
     async (email: string, password: string): Promise<LoginResult | MfaChallenge> => {
@@ -86,27 +90,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           api.setToken(res.data.accessToken);
         }
         if (res.data.user) {
-          setUser(res.data.user);
-          return { user: res.data.user, needsMfaSetup: res.data.needsMfaSetup };
+          const fullUser = await fetchProfile();
+          return { user: fullUser, needsMfaSetup: res.data.needsMfaSetup };
         }
       }
       throw new Error(res.error?.message || 'Login failed');
     },
-    [],
+    [fetchProfile],
   );
 
-  const verifyMfa = useCallback(async (mfaToken: string, code: string): Promise<User> => {
-    const res = await api.post<{ user: User; accessToken: string }>('/auth/mfa/verify', {
-      mfaToken,
-      code,
-    });
-    if (res.success && res.data) {
-      api.setToken(res.data.accessToken);
-      setUser(res.data.user);
-      return res.data.user;
-    }
-    throw new Error(res.error?.message || 'MFA verification failed');
-  }, []);
+  const verifyMfa = useCallback(
+    async (mfaToken: string, code: string): Promise<User> => {
+      const res = await api.post<{ user: User; accessToken: string }>('/auth/mfa/verify', {
+        mfaToken,
+        code,
+      });
+      if (res.success && res.data) {
+        api.setToken(res.data.accessToken);
+        return fetchProfile();
+      }
+      throw new Error(res.error?.message || 'MFA verification failed');
+    },
+    [fetchProfile],
+  );
 
   const verifyMfaRecovery = useCallback(
     async (mfaToken: string, recoveryCode: string): Promise<User> => {
@@ -116,12 +122,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (res.success && res.data) {
         api.setToken(res.data.accessToken);
-        setUser(res.data.user);
-        return res.data.user;
+        return fetchProfile();
       }
       throw new Error(res.error?.message || 'Recovery code verification failed');
     },
-    [],
+    [fetchProfile],
   );
 
   const register = useCallback(
