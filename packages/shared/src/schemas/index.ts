@@ -210,6 +210,19 @@ export const roomBulkGenerateSchema = z
     path: ['endRoom'],
   });
 
+// Analytics export schema
+export const analyticsExportSchema = z.object({
+  type: z.enum(['tips', 'payouts', 'staff']),
+  startDate: z
+    .string()
+    .refine((d) => !isNaN(Date.parse(d)), 'Invalid date')
+    .optional(),
+  endDate: z
+    .string()
+    .refine((d) => !isNaN(Date.parse(d)), 'Invalid date')
+    .optional(),
+});
+
 // Type exports from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -225,3 +238,4 @@ export type MfaRecoveryInput = z.infer<typeof mfaRecoverySchema>;
 export type MfaSetupVerifyInput = z.infer<typeof mfaSetupVerifySchema>;
 export type HotelProfileInput = z.infer<typeof hotelProfileSchema>;
 export type RoomBulkGenerateInput = z.infer<typeof roomBulkGenerateSchema>;
+export type AnalyticsExportInput = z.infer<typeof analyticsExportSchema>;

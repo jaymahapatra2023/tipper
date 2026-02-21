@@ -8,11 +8,13 @@ import {
   staffCreateSchema,
   roomCreateSchema,
   assignmentCreateSchema,
+  analyticsExportSchema,
 } from '@tipper/shared';
 
 import { adminService } from '../services/admin.service';
 import { qrService } from '../services/qr.service';
 import { qrExportService } from '../services/qr-export.service';
+import { analyticsExportService } from '../services/analytics-export.service';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess } from '../utils/response';
@@ -308,5 +310,42 @@ router.get('/analytics/overview', async (req: Request, res: Response, next: Next
     next(err);
   }
 });
+
+router.get(
+  '/analytics/export',
+  validate(analyticsExportSchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { type, startDate, endDate } = req.query as {
+        type: 'tips' | 'payouts' | 'staff';
+        startDate?: string;
+        endDate?: string;
+      };
+      const hotel = await adminService.getHotel(req.user!.userId);
+
+      let csv: string;
+      switch (type) {
+        case 'tips':
+          csv = await analyticsExportService.exportTips(hotel!.id, startDate, endDate);
+          break;
+        case 'payouts':
+          csv = await analyticsExportService.exportPayouts(hotel!.id, startDate, endDate);
+          break;
+        case 'staff':
+          csv = await analyticsExportService.exportStaffPerformance(hotel!.id, startDate, endDate);
+          break;
+      }
+
+      const filename = `${type}-export-${new Date().toISOString().split('T')[0]}.csv`;
+      res.set({
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      });
+      res.send(csv);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export { router as adminRoutes };

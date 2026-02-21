@@ -1,13 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Receipt, DollarSign, Wallet, TrendingUp, BarChart3 } from 'lucide-react';
+import {
+  Receipt,
+  DollarSign,
+  Wallet,
+  TrendingUp,
+  BarChart3,
+  Download,
+  ChevronDown,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { PageHeader } from '@/components/shared/page-header';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -24,6 +38,7 @@ interface AnalyticsData {
 export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -44,6 +59,28 @@ export default function AdminAnalyticsPage() {
     setLoading(false);
   }
 
+  async function downloadExport(type: 'tips' | 'payouts' | 'staff') {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams({ type });
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      const blob = await api.downloadBlob(`/admin/analytics/export?${params.toString()}`);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}-export.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // silently fail — the blob call already throws on non-ok
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <PageHeader title="Analytics" description="Analyze tipping trends and revenue" />
@@ -60,7 +97,24 @@ export default function AdminAnalyticsPage() {
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
             <Button onClick={loadAnalytics}>Apply</Button>
-            <Button variant="outline">Export CSV</Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={exporting}>
+                  <Download className="mr-2 h-4 w-4" />
+                  {exporting ? 'Exporting...' : 'Export CSV'}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => downloadExport('tips')}>Tips CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadExport('payouts')}>
+                  Payouts CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadExport('staff')}>
+                  Staff Performance CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardContent>
       </Card>
