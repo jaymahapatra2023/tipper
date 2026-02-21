@@ -314,7 +314,50 @@ export class AuthService {
       select: { id: true, email: true, name: true, role: true, mfaEnabled: true, createdAt: true },
     });
     if (!user) throw new NotFoundError('User');
-    return user;
+
+    let hotel: {
+      id: string;
+      name: string;
+      logoUrl: string | null;
+      primaryColor: string | null;
+      secondaryColor: string | null;
+    } | null = null;
+
+    if (user.role === 'hotel_admin') {
+      const ha = await prisma.hotelAdmin.findFirst({
+        where: { userId: user.id },
+        include: {
+          hotel: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              primaryColor: true,
+              secondaryColor: true,
+            },
+          },
+        },
+      });
+      hotel = ha?.hotel ?? null;
+    } else if (user.role === 'staff') {
+      const sm = await prisma.staffMember.findFirst({
+        where: { userId: user.id },
+        include: {
+          hotel: {
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              primaryColor: true,
+              secondaryColor: true,
+            },
+          },
+        },
+      });
+      hotel = sm?.hotel ?? null;
+    }
+
+    return { ...user, hotel };
   }
 
   private async generateTokensForUser(user: { id: string; email: string; role: string }) {

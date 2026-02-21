@@ -5,11 +5,20 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { UserRole } from '@tipper/shared';
 
+interface HotelBranding {
+  id: string;
+  name: string;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  secondaryColor?: string | null;
+}
+
 interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
+  hotel?: HotelBranding | null;
 }
 
 interface MfaChallenge {

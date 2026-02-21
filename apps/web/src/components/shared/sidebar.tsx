@@ -34,19 +34,37 @@ export function Sidebar({ items, title }: SidebarProps) {
 
   return (
     <aside className="glass-panel flex h-screen w-64 flex-col border-r border-border/60 bg-gradient-to-b from-card to-slate-50/80">
-      <div className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
+      <div
+        className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent"
+        style={
+          user?.hotel?.primaryColor
+            ? {
+                background: `linear-gradient(to right, ${user.hotel.primaryColor}, ${user.hotel.primaryColor}80, transparent)`,
+              }
+            : undefined
+        }
+      />
 
       <div className="flex items-center justify-between p-6">
-        <div>
-          <Link
-            href="/"
-            className="font-display text-2xl font-semibold tracking-tight text-primary"
-          >
-            Tipper
-          </Link>
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70 mt-1">
-            {title}
-          </p>
+        <div className="flex items-center gap-3">
+          {user?.hotel?.logoUrl && (
+            <img
+              src={user.hotel.logoUrl}
+              alt={user.hotel.name}
+              className="h-8 w-8 rounded-full object-cover ring-1 ring-border/40"
+            />
+          )}
+          <div>
+            <Link
+              href="/"
+              className="font-display text-2xl font-semibold tracking-tight text-primary"
+            >
+              {user?.hotel?.name || 'Tipper'}
+            </Link>
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70 mt-1">
+              {title}
+            </p>
+          </div>
         </div>
         <NotificationBell />
       </div>
