@@ -532,7 +532,12 @@ export default function TipPage() {
           >
             {step === 'stayDetails' && (
               <>
-                <HotelHero hotelName={hotelInfo?.hotelName ?? ''} />
+                <HotelHero
+                  hotelName={hotelInfo?.hotelName ?? ''}
+                  logoUrl={hotelInfo?.logoUrl}
+                  primaryColor={hotelInfo?.primaryColor}
+                  secondaryColor={hotelInfo?.secondaryColor}
+                />
 
                 {locationStatus === 'checking' && (
                   <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm text-blue-300">

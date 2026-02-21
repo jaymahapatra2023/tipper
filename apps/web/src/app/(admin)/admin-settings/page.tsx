@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck, MapPin } from 'lucide-react';
+import { ShieldCheck, MapPin, Palette, Upload, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/shared/page-header';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { HotelHero } from '@/components/ui/hotel-hero';
 
 interface HotelData {
   id: string;
@@ -26,6 +27,9 @@ interface HotelData {
   geofenceLatitude: number | null;
   geofenceLongitude: number | null;
   geofenceRadius: number;
+  logoUrl: string | null;
+  primaryColor: string | null;
+  secondaryColor: string | null;
 }
 
 interface StripeStatus {
@@ -51,6 +55,11 @@ function AdminSettingsContent() {
   const [stripeLoading, setStripeLoading] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [mfaLoading, setMfaLoading] = useState(false);
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [brandingPrimary, setBrandingPrimary] = useState<string>('');
+  const [brandingSecondary, setBrandingSecondary] = useState<string>('');
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     Promise.all([
@@ -58,7 +67,12 @@ function AdminSettingsContent() {
       api.get<StripeStatus>('/admin/stripe/status'),
       api.get<{ mfaEnabled: boolean }>('/auth/me'),
     ]).then(([hotelRes, stripeRes, meRes]) => {
-      if (hotelRes.success && hotelRes.data) setHotel(hotelRes.data);
+      if (hotelRes.success && hotelRes.data) {
+        setHotel(hotelRes.data);
+        setLogoPreview(hotelRes.data.logoUrl);
+        setBrandingPrimary(hotelRes.data.primaryColor || '');
+        setBrandingSecondary(hotelRes.data.secondaryColor || '');
+      }
       if (stripeRes.success && stripeRes.data) setStripeStatus(stripeRes.data);
       if (meRes.success && meRes.data) setMfaEnabled(meRes.data.mfaEnabled ?? false);
       setLoading(false);
@@ -102,6 +116,45 @@ function AdminSettingsContent() {
       window.location.href = res.data.url;
     }
     setStripeLoading(false);
+  }
+
+  async function handleLogoUpload(file: File) {
+    if (!hotel) return;
+    try {
+      const res = await api.post<{ uploadUrl: string; publicUrl: string }>(
+        '/admin/hotel/branding/upload-url',
+        { contentType: file.type },
+      );
+      if (!res.success || !res.data) return;
+
+      await fetch(res.data.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+
+      setLogoPreview(res.data.publicUrl);
+    } catch {
+      // Upload failed silently
+    }
+  }
+
+  async function saveBranding() {
+    setBrandingSaving(true);
+    const res = await api.put('/admin/hotel/branding', {
+      logoUrl: logoPreview || null,
+      primaryColor: brandingPrimary || null,
+      secondaryColor: brandingSecondary || null,
+    });
+    if (res.success && hotel) {
+      setHotel({
+        ...hotel,
+        logoUrl: logoPreview,
+        primaryColor: brandingPrimary || null,
+        secondaryColor: brandingSecondary || null,
+      });
+    }
+    setBrandingSaving(false);
   }
 
   if (loading) return <LoadingSpinner />;
@@ -221,6 +274,144 @@ function AdminSettingsContent() {
               {hotel.mfaRequired ? 'Required' : 'Optional'}
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden card-hover">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Hotel Branding
+          </CardTitle>
+          <CardDescription>
+            Customize your hotel&apos;s logo and colors for the guest tip flow
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Live preview */}
+          <div>
+            <Label className="mb-2 block">Preview</Label>
+            <HotelHero
+              hotelName={hotel.name}
+              logoUrl={logoPreview || undefined}
+              primaryColor={brandingPrimary || undefined}
+              secondaryColor={brandingSecondary || undefined}
+            />
+          </div>
+
+          {/* Logo upload */}
+          <div>
+            <Label className="mb-2 block">Hotel Logo</Label>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleLogoUpload(file);
+              }}
+            />
+            <div className="flex items-center gap-3">
+              {logoPreview ? (
+                <img
+                  src={logoPreview}
+                  alt="Logo preview"
+                  className="h-16 w-16 rounded-full object-cover ring-2 ring-border"
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground/30">
+                  <Upload className="h-5 w-5 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  <Upload className="mr-1.5 h-3.5 w-3.5" />
+                  {logoPreview ? 'Change' : 'Upload'}
+                </Button>
+                {logoPreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogoPreview(null)}
+                  >
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">PNG, JPG, or WebP. Max 2MB.</p>
+          </div>
+
+          {/* Color pickers */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label className="mb-2 block">Primary Color</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={brandingPrimary || '#0f1b2d'}
+                  onChange={(e) => setBrandingPrimary(e.target.value)}
+                  className="h-10 w-10 cursor-pointer rounded border border-border"
+                />
+                <Input
+                  value={brandingPrimary}
+                  onChange={(e) => setBrandingPrimary(e.target.value)}
+                  placeholder="#0f1b2d"
+                  className="flex-1"
+                />
+                {brandingPrimary && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBrandingPrimary('')}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div>
+              <Label className="mb-2 block">Secondary Color</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={brandingSecondary || '#1a2744'}
+                  onChange={(e) => setBrandingSecondary(e.target.value)}
+                  className="h-10 w-10 cursor-pointer rounded border border-border"
+                />
+                <Input
+                  value={brandingSecondary}
+                  onChange={(e) => setBrandingSecondary(e.target.value)}
+                  placeholder="#1a2744"
+                  className="flex-1"
+                />
+                {brandingSecondary && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setBrandingSecondary('')}
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <Button onClick={saveBranding} disabled={brandingSaving}>
+            {brandingSaving ? 'Saving...' : 'Save Branding'}
+          </Button>
         </CardContent>
       </Card>
 

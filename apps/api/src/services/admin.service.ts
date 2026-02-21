@@ -5,6 +5,7 @@ import type {
   RoomCreateInput,
   HotelSettingsInput,
   HotelProfileInput,
+  HotelBrandingInput,
 } from '@tipper/shared';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -484,6 +485,27 @@ export class AdminService {
       stripeConnected: hotel.stripeOnboarded,
       qrGenerated: qrCount,
     };
+  }
+
+  async updateHotelBranding(userId: string, input: HotelBrandingInput, ipAddress?: string) {
+    const admin = await this.getHotelAdmin(userId);
+    const hotel = await prisma.hotel.update({
+      where: { id: admin.hotelId },
+      data: {
+        logoUrl: input.logoUrl ?? null,
+        primaryColor: input.primaryColor ?? null,
+        secondaryColor: input.secondaryColor ?? null,
+      },
+    });
+    logAudit({
+      userId,
+      action: 'hotel_branding_update',
+      entityType: 'hotel',
+      entityId: admin.hotelId,
+      metadata: input as Record<string, unknown>,
+      ipAddress,
+    });
+    return hotel;
   }
 
   private async getHotelAdmin(userId: string) {

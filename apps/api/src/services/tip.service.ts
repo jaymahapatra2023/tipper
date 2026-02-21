@@ -8,6 +8,7 @@ import { stripe } from '../config/stripe';
 import { emailService } from './email.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 import { verifyGeofence } from '../utils/geolocation';
+import { notificationService } from './notification.service';
 
 export class TipService {
   async createTip(input: TipCreateInput) {
@@ -166,6 +167,11 @@ export class TipService {
     // Distribute tip to staff
     await this.distributeTip(tip.id);
 
+    // Create in-app notifications for staff (non-blocking)
+    this.createTipNotifications(tip.id, tip.room.roomNumber).catch((err) =>
+      console.error('Failed to create tip notifications:', err),
+    );
+
     // Notify staff of tip (non-blocking — email failure must not affect the tip)
     this.notifyStaffOfTip(tip.id).catch((err) =>
       console.error('Failed to send tip notification emails:', err),
@@ -270,6 +276,23 @@ export class TipService {
       }
     }
   }
+  private async createTipNotifications(tipId: string, roomNumber: string) {
+    const distributions = await prisma.tipDistribution.findMany({
+      where: { tipId },
+      include: { staffMember: { select: { userId: true } } },
+    });
+
+    for (const dist of distributions) {
+      await notificationService.create(
+        dist.staffMember.userId,
+        'tip_received',
+        'New Tip Received',
+        `You received a $${(dist.amount / 100).toFixed(2)} tip for room ${roomNumber}`,
+        { tipId, amount: dist.amount },
+      );
+    }
+  }
+
   private async fetchReceiptData(tipId: string) {
     const tip = await prisma.tip.findUnique({
       where: { id: tipId },

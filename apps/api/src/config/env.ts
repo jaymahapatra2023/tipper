@@ -17,6 +17,7 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   MFA_ENCRYPTION_KEY: z.string().optional(),
   PAYOUT_CRON: z.string().default('0 2 * * *'),
+  AWS_S3_BUCKET: z.string().default('tipper-uploads'),
 });
 
 export type Env = z.infer<typeof envSchema>;

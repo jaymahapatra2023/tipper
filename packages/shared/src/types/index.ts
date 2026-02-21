@@ -77,6 +77,9 @@ export interface QrResolveResponse {
   geofenceLatitude?: number;
   geofenceLongitude?: number;
   geofenceRadius?: number;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 export interface TipCreateRequest {

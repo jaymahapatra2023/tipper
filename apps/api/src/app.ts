@@ -16,6 +16,7 @@ import { platformRoutes } from './routes/platform.routes';
 import { webhookRoutes } from './routes/webhook.routes';
 import { payoutRoutes } from './routes/payout.routes';
 import { feedbackRoutes } from './routes/feedback.routes';
+import { notificationRoutes } from './routes/notification.routes';
 
 const app: Express = express();
 
@@ -55,6 +56,7 @@ app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/platform', platformRoutes);
 app.use('/api/v1/platform/payouts', payoutRoutes);
 app.use('/api/v1/feedback', feedbackRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // Error handler
 app.use(errorHandler);

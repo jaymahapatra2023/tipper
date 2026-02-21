@@ -2,7 +2,42 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, Mic, MicOff } from 'lucide-react';
+
+// Web Speech API type declarations
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  [index: number]: SpeechRecognitionResult;
+}
+
+interface SpeechRecognitionResult {
+  readonly length: number;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionInstance extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognitionInstance;
+}
 import { useAuth } from '@/hooks/use-auth';
 import { api } from '@/lib/api';
 import { parseCommand } from '@/lib/assistant-commands';
@@ -30,7 +65,14 @@ export function ChatAssistant() {
   ]);
   const [input, setInput] = useState('');
   const [testingMode, setTestingMode] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const hasSpeechRecognition =
+    typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   // Don't render for guests or unauthenticated users
   if (!user || user.role === 'guest') return null;
@@ -41,6 +83,48 @@ export function ChatAssistant() {
 
   const addMessage = (role: 'user' | 'bot', text: string) => {
     setMessages((prev) => [...prev, { id: Date.now().toString(), role, text }]);
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognitionAPI =
+      (window as unknown as { SpeechRecognition?: SpeechRecognitionConstructor })
+        .SpeechRecognition ||
+      (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionConstructor })
+        .webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) return;
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+      // Auto-submit after getting transcript
+      setTimeout(() => {
+        formRef.current?.requestSubmit();
+      }, 100);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -179,7 +263,11 @@ export function ChatAssistant() {
           <ScrollableMessages messages={messages} messagesEndRef={messagesEndRef} />
 
           {/* Input */}
-          <form onSubmit={handleSubmit} className="flex gap-2 border-t border-border/50 p-3">
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            className="flex gap-2 border-t border-border/50 p-3"
+          >
             <input
               type="text"
               value={input}
@@ -187,6 +275,20 @@ export function ChatAssistant() {
               placeholder={testingMode ? 'Bug: ... or Enhancement: ...' : 'Type a command...'}
               className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
+            {hasSpeechRecognition && (
+              <button
+                type="button"
+                onClick={toggleListening}
+                className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+                  isListening
+                    ? 'bg-destructive text-destructive-foreground animate-pulse'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+                aria-label={isListening ? 'Stop listening' : 'Start voice input'}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            )}
             <button
               type="submit"
               disabled={!input.trim()}

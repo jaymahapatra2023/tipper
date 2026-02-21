@@ -26,6 +26,9 @@ export class QrService {
                 geofenceLatitude: true,
                 geofenceLongitude: true,
                 geofenceRadius: true,
+                logoUrl: true,
+                primaryColor: true,
+                secondaryColor: true,
               },
             },
           },
@@ -61,6 +64,9 @@ export class QrService {
       geofenceLatitude: qrCode.room.hotel.geofenceLatitude,
       geofenceLongitude: qrCode.room.hotel.geofenceLongitude,
       geofenceRadius: qrCode.room.hotel.geofenceRadius,
+      logoUrl: qrCode.room.hotel.logoUrl ?? undefined,
+      primaryColor: qrCode.room.hotel.primaryColor ?? undefined,
+      secondaryColor: qrCode.room.hotel.secondaryColor ?? undefined,
     };
   }
 

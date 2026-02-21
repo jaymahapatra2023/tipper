@@ -4,6 +4,7 @@ import {
   UserRole,
   hotelSettingsSchema,
   hotelProfileSchema,
+  hotelBrandingSchema,
   roomBulkGenerateSchema,
   staffCreateSchema,
   roomCreateSchema,
@@ -13,6 +14,7 @@ import {
 } from '@tipper/shared';
 
 import { adminService } from '../services/admin.service';
+import { uploadService } from '../services/upload.service';
 import { qrService } from '../services/qr.service';
 import { qrExportService } from '../services/qr-export.service';
 import { analyticsExportService } from '../services/analytics-export.service';
@@ -60,6 +62,38 @@ router.put(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const hotel = await adminService.updateHotelProfile(
+        req.user!.userId,
+        req.body,
+        getClientIp(req),
+      );
+      sendSuccess(res, hotel);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Hotel Branding
+router.post(
+  '/hotel/branding/upload-url',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { contentType } = req.body;
+      const hotel = await adminService.getHotel(req.user!.userId);
+      const result = await uploadService.generatePresignedUploadUrl(hotel!.id, contentType);
+      sendSuccess(res, { uploadUrl: result.uploadUrl, publicUrl: result.publicUrl });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.put(
+  '/hotel/branding',
+  validate(hotelBrandingSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const hotel = await adminService.updateHotelBranding(
         req.user!.userId,
         req.body,
         getClientIp(req),

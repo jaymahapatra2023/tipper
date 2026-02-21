@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
+import { NotificationBell } from '@/components/shared/notification-bell';
 
 interface NavItem {
   label: string;
@@ -35,13 +36,19 @@ export function Sidebar({ items, title }: SidebarProps) {
     <aside className="glass-panel flex h-screen w-64 flex-col border-r border-border/60 bg-gradient-to-b from-card to-slate-50/80">
       <div className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
 
-      <div className="p-6">
-        <Link href="/" className="font-display text-2xl font-semibold tracking-tight text-primary">
-          Tipper
-        </Link>
-        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70 mt-1">
-          {title}
-        </p>
+      <div className="flex items-center justify-between p-6">
+        <div>
+          <Link
+            href="/"
+            className="font-display text-2xl font-semibold tracking-tight text-primary"
+          >
+            Tipper
+          </Link>
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70 mt-1">
+            {title}
+          </p>
+        </div>
+        <NotificationBell />
       </div>
 
       <nav className="flex-1 space-y-1 px-3">

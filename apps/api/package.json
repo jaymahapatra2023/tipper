@@ -10,7 +10,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.995.0",
     "@aws-sdk/client-ses": "^3.995.0",
+    "@aws-sdk/s3-request-presigner": "^3.995.0",
     "@tipper/database": "workspace:*",
     "@tipper/shared": "workspace:*",
     "archiver": "^7.0.0",

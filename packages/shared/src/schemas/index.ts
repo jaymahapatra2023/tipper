@@ -261,6 +261,28 @@ export const feedbackUpdateSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).optional(),
 });
 
+// Hotel branding schema
+export const hotelBrandingSchema = z.object({
+  logoUrl: z.string().url().nullable().optional(),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')
+    .nullable()
+    .optional(),
+  secondaryColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')
+    .nullable()
+    .optional(),
+});
+
+// Notification schemas
+export const notificationQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  unreadOnly: z.coerce.boolean().optional(),
+});
+
 // Type exports from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -281,3 +303,5 @@ export type AuditLogQueryInput = z.infer<typeof auditLogQuerySchema>;
 export type FeedbackCreateInput = z.infer<typeof feedbackCreateSchema>;
 export type FeedbackQueryInput = z.infer<typeof feedbackQuerySchema>;
 export type FeedbackUpdateInput = z.infer<typeof feedbackUpdateSchema>;
+export type NotificationQueryInput = z.infer<typeof notificationQuerySchema>;
+export type HotelBrandingInput = z.infer<typeof hotelBrandingSchema>;

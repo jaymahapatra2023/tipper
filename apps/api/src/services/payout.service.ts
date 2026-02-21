@@ -4,6 +4,7 @@ import type { PayoutView, PayoutAnalytics, PayoutProcessResult } from '@tipper/s
 
 import { stripe } from '../config/stripe';
 import { NotFoundError } from '../utils/errors';
+import { notificationService } from './notification.service';
 
 export class PayoutService {
   async processPayouts(): Promise<PayoutProcessResult> {
@@ -111,6 +112,16 @@ export class PayoutService {
           processedAt: new Date(),
         },
       });
+
+      notificationService
+        .create(
+          staffMember.userId,
+          'payout_completed',
+          'Payout Completed',
+          `Your payout of $${(totalAmount / 100).toFixed(2)} has been completed`,
+          { payoutId: payout.id, amount: totalAmount },
+        )
+        .catch((err) => console.error('Failed to create payout notification:', err));
     } catch (err) {
       // Unlink distributions so they can be retried
       await prisma.$transaction([
@@ -126,6 +137,19 @@ export class PayoutService {
           },
         }),
       ]);
+
+      notificationService
+        .create(
+          staffMember.userId,
+          'payout_failed',
+          'Payout Failed',
+          `Your payout of $${(totalAmount / 100).toFixed(2)} could not be processed`,
+          { payoutId: payout.id, amount: totalAmount },
+        )
+        .catch((notifErr) =>
+          console.error('Failed to create payout failure notification:', notifErr),
+        );
+
       throw err;
     }
   }
