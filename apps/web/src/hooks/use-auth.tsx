@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { UserRole } from '@tipper/shared';
 
@@ -14,14 +15,15 @@ interface User {
 interface AuthContext {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
+  register: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContext | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -45,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<User> => {
     const res = await api.post<{ user: User; accessToken: string }>('/auth/login', {
       email,
       password,
@@ -53,30 +55,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (res.success && res.data) {
       api.setToken(res.data.accessToken);
       setUser(res.data.user);
+      return res.data.user;
     } else {
       throw new Error(res.error?.message || 'Login failed');
     }
   }, []);
 
-  const register = useCallback(async (email: string, password: string, name: string) => {
-    const res = await api.post<{ user: User; accessToken: string }>('/auth/register', {
-      email,
-      password,
-      name,
-    });
-    if (res.success && res.data) {
-      api.setToken(res.data.accessToken);
-      setUser(res.data.user);
-    } else {
-      throw new Error(res.error?.message || 'Registration failed');
-    }
-  }, []);
+  const register = useCallback(
+    async (email: string, password: string, name: string): Promise<User> => {
+      const res = await api.post<{ user: User; accessToken: string }>('/auth/register', {
+        email,
+        password,
+        name,
+      });
+      if (res.success && res.data) {
+        api.setToken(res.data.accessToken);
+        setUser(res.data.user);
+        return res.data.user;
+      } else {
+        throw new Error(res.error?.message || 'Registration failed');
+      }
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     await api.post('/auth/logout');
     api.setToken(null);
     setUser(null);
-  }, []);
+    router.push('/login');
+  }, [router]);
 
   return <AuthContext value={{ user, isLoading, login, register, logout }}>{children}</AuthContext>;
 }

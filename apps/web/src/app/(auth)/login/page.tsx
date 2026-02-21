@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type LoginInput, UserRole } from '@tipper/shared';
+import { loginSchema, type LoginInput, type UserRole } from '@tipper/shared';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,12 +28,24 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  function redirectForRole(role: UserRole) {
+    switch (role) {
+      case 'platform_admin':
+        return '/platform-hotels';
+      case 'hotel_admin':
+        return '/admin-dashboard';
+      case 'staff':
+        return '/staff-dashboard';
+      default:
+        return '/';
+    }
+  }
+
   async function onSubmit(data: LoginInput) {
     try {
       setError('');
-      await login(data.email, data.password);
-      // Redirect based on role will be handled by middleware/layout
-      router.push('/staff-dashboard');
+      const user = await login(data.email, data.password);
+      router.push(redirectForRole(user.role));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     }

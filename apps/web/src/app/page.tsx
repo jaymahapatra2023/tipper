@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { QrCode, HandCoins, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LandingNav } from '@/components/shared/landing-nav';
 
 export default function HomePage() {
   return (
@@ -8,14 +9,7 @@ export default function HomePage() {
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <h1 className="text-2xl font-bold tracking-tight text-primary">Tipper</h1>
-          <nav className="flex gap-4">
-            <Link href="/login">
-              <Button variant="ghost">Log In</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Sign Up</Button>
-            </Link>
-          </nav>
+          <LandingNav />
         </div>
       </header>
 

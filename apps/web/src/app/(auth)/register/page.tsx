@@ -31,8 +31,18 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterInput) {
     try {
       setError('');
-      await signup(data.email, data.password, data.name);
-      router.push('/staff-dashboard');
+      const user = await signup(data.email, data.password, data.name);
+      // New registrations default to 'guest' role — send to landing page
+      // Staff/admin accounts are created by hotel admins, not self-registration
+      const redirect =
+        user.role === 'platform_admin'
+          ? '/platform-hotels'
+          : user.role === 'hotel_admin'
+            ? '/admin-dashboard'
+            : user.role === 'staff'
+              ? '/staff-dashboard'
+              : '/';
+      router.push(redirect);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     }
