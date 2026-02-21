@@ -5,6 +5,8 @@ import { generateCsv } from '../utils/csv';
 class AuditLogService {
   async getLogs(filters: AuditLogQueryInput, scopeUserIds?: string[]) {
     const where = this.buildWhere(filters, scopeUserIds);
+    const page = Number(filters.page) || 1;
+    const limit = Number(filters.limit) || 20;
 
     const [logs, total] = await Promise.all([
       prisma.auditLog.findMany({
@@ -13,8 +15,8 @@ class AuditLogService {
           user: { select: { name: true, email: true } },
         },
         orderBy: { createdAt: 'desc' },
-        skip: (filters.page - 1) * filters.limit,
-        take: filters.limit,
+        skip: (page - 1) * limit,
+        take: limit,
       }),
       prisma.auditLog.count({ where }),
     ]);
