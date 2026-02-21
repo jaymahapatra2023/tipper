@@ -57,9 +57,13 @@ model User {
   name          String
   role          UserRole  @default(guest)
   isActive      Boolean   @default(true) @map("is_active")
-  emailVerified Boolean   @default(false) @map("email_verified")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  mfaEnabled       Boolean   @default(false) @map("mfa_enabled")
+  mfaSecret        String?   @map("mfa_secret")
+  mfaRecoveryCodes String[]  @map("mfa_recovery_codes")
+  mfaSetupAt       DateTime? @map("mfa_setup_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   oauthAccounts OAuthAccount[]
   staffMembers  StaffMember[]
@@ -106,6 +110,7 @@ model Hotel {
   currency            String      @default("usd")
   poolingEnabled      Boolean     @default(false) @map("pooling_enabled")
   poolingType         PoolingType? @map("pooling_type")
+  mfaRequired         Boolean     @default(false) @map("mfa_required")
   platformFeePercent  Float?      @map("platform_fee_percent")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")

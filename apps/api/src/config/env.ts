@@ -13,6 +13,9 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   AWS_REGION: z.string().default('us-east-1'),
   AWS_SES_FROM_EMAIL: z.string().default('noreply@tipper.app'),
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+  MFA_ENCRYPTION_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

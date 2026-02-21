@@ -122,3 +122,24 @@ export interface AdminAnalytics {
   tipsByStaff: { staffName: string; count: number; total: number }[];
   tipsByDate: { date: string; count: number; total: number }[];
 }
+
+export interface MfaSetupResponse {
+  secret: string;
+  qrCodeUrl: string;
+  recoveryCodes: string[];
+}
+
+export interface LoginResponse {
+  user?: { id: string; email: string; name: string; role: UserRole };
+  accessToken?: string;
+  mfaRequired?: boolean;
+  mfaToken?: string;
+  needsMfaSetup?: boolean;
+}
+
+export interface HotelRegisterRequest {
+  hotelName: string;
+  name: string;
+  email: string;
+  password: string;
+}

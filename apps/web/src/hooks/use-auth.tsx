@@ -12,10 +12,22 @@ interface User {
   role: UserRole;
 }
 
+interface MfaChallenge {
+  mfaRequired: true;
+  mfaToken: string;
+}
+
+interface LoginResult {
+  user: User;
+  needsMfaSetup?: boolean;
+}
+
 interface AuthContext {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string) => Promise<LoginResult | MfaChallenge>;
+  verifyMfa: (mfaToken: string, code: string) => Promise<User>;
+  verifyMfaRecovery: (mfaToken: string, recoveryCode: string) => Promise<User>;
   register: (email: string, password: string, name: string) => Promise<User>;
   logout: () => Promise<void>;
 }
@@ -47,19 +59,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const login = useCallback(async (email: string, password: string): Promise<User> => {
-    const res = await api.post<{ user: User; accessToken: string }>('/auth/login', {
-      email,
-      password,
+  const login = useCallback(
+    async (email: string, password: string): Promise<LoginResult | MfaChallenge> => {
+      const res = await api.post<{
+        user?: User;
+        accessToken?: string;
+        mfaRequired?: boolean;
+        mfaToken?: string;
+        needsMfaSetup?: boolean;
+      }>('/auth/login', { email, password });
+
+      if (res.success && res.data) {
+        if (res.data.mfaRequired && res.data.mfaToken) {
+          return { mfaRequired: true, mfaToken: res.data.mfaToken };
+        }
+        if (res.data.accessToken) {
+          api.setToken(res.data.accessToken);
+        }
+        if (res.data.user) {
+          setUser(res.data.user);
+          return { user: res.data.user, needsMfaSetup: res.data.needsMfaSetup };
+        }
+      }
+      throw new Error(res.error?.message || 'Login failed');
+    },
+    [],
+  );
+
+  const verifyMfa = useCallback(async (mfaToken: string, code: string): Promise<User> => {
+    const res = await api.post<{ user: User; accessToken: string }>('/auth/mfa/verify', {
+      mfaToken,
+      code,
     });
     if (res.success && res.data) {
       api.setToken(res.data.accessToken);
       setUser(res.data.user);
       return res.data.user;
-    } else {
-      throw new Error(res.error?.message || 'Login failed');
     }
+    throw new Error(res.error?.message || 'MFA verification failed');
   }, []);
+
+  const verifyMfaRecovery = useCallback(
+    async (mfaToken: string, recoveryCode: string): Promise<User> => {
+      const res = await api.post<{ user: User; accessToken: string }>('/auth/mfa/recovery', {
+        mfaToken,
+        recoveryCode,
+      });
+      if (res.success && res.data) {
+        api.setToken(res.data.accessToken);
+        setUser(res.data.user);
+        return res.data.user;
+      }
+      throw new Error(res.error?.message || 'Recovery code verification failed');
+    },
+    [],
+  );
 
   const register = useCallback(
     async (email: string, password: string, name: string): Promise<User> => {
@@ -86,7 +140,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   }, [router]);
 
-  return <AuthContext value={{ user, isLoading, login, register, logout }}>{children}</AuthContext>;
+  return (
+    <AuthContext value={{ user, isLoading, login, verifyMfa, verifyMfaRecovery, register, logout }}>
+      {children}
+    </AuthContext>
+  );
 }
 
 export function useAuth() {

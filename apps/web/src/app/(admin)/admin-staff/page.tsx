@@ -26,6 +26,7 @@ export default function AdminStaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState<string | null>(null);
 
   const form = useForm<StaffCreateInput>({
     resolver: zodResolver(staffCreateSchema),
@@ -49,6 +50,21 @@ export default function AdminStaffPage() {
       setShowForm(false);
       loadStaff();
     }
+  }
+
+  async function resetPassword(userId: string) {
+    if (
+      !confirm(
+        'This will generate a temporary password and send it to the staff member via email. Continue?',
+      )
+    )
+      return;
+    setResettingPassword(userId);
+    const res = await api.post(`/admin/staff/${userId}/reset-password`);
+    if (res.success) {
+      alert('Password reset email sent successfully.');
+    }
+    setResettingPassword(null);
   }
 
   async function deactivateStaff(id: string) {
@@ -115,9 +131,19 @@ export default function AdminStaffPage() {
                       {s.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                     {s.isActive && (
-                      <Button variant="outline" size="sm" onClick={() => deactivateStaff(s.id)}>
-                        Deactivate
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => resetPassword(s.user.id)}
+                          disabled={resettingPassword === s.user.id}
+                        >
+                          {resettingPassword === s.user.id ? 'Resetting...' : 'Reset Password'}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => deactivateStaff(s.id)}>
+                          Deactivate
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>

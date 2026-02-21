@@ -1,13 +1,15 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ShieldCheck } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/shared/page-header';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
@@ -19,6 +21,7 @@ interface HotelData {
   maxTipAmount: number;
   poolingEnabled: boolean;
   poolingType: string | null;
+  mfaRequired: boolean;
 }
 
 interface StripeStatus {
@@ -35,20 +38,25 @@ export default function AdminSettingsPage() {
 }
 
 function AdminSettingsContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [hotel, setHotel] = useState<HotelData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [stripeLoading, setStripeLoading] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(false);
 
   useEffect(() => {
     Promise.all([
       api.get<HotelData>('/admin/hotel'),
       api.get<StripeStatus>('/admin/stripe/status'),
-    ]).then(([hotelRes, stripeRes]) => {
+      api.get<{ mfaEnabled: boolean }>('/auth/me'),
+    ]).then(([hotelRes, stripeRes, meRes]) => {
       if (hotelRes.success && hotelRes.data) setHotel(hotelRes.data);
       if (stripeRes.success && stripeRes.data) setStripeStatus(stripeRes.data);
+      if (meRes.success && meRes.data) setMfaEnabled(meRes.data.mfaEnabled ?? false);
       setLoading(false);
     });
   }, []);
@@ -71,6 +79,7 @@ function AdminSettingsContent() {
       maxTipAmount: hotel.maxTipAmount,
       poolingEnabled: hotel.poolingEnabled,
       poolingType: hotel.poolingType,
+      mfaRequired: hotel.mfaRequired,
       currency: 'usd',
     });
     setSaving(false);
@@ -132,6 +141,78 @@ function AdminSettingsContent() {
               </Button>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden card-hover">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" />
+            Your Two-Factor Authentication
+          </CardTitle>
+          <CardDescription>Add an extra layer of security to your account</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span>Status:</span>
+              <Badge variant={mfaEnabled ? 'success' : 'secondary'}>
+                {mfaEnabled ? 'Enabled' : 'Disabled'}
+              </Badge>
+            </div>
+            {mfaEnabled ? (
+              <Button
+                variant="outline"
+                disabled={mfaLoading}
+                onClick={async () => {
+                  if (
+                    !confirm(
+                      'This will disable two-factor authentication on your account. Continue?',
+                    )
+                  )
+                    return;
+                  setMfaLoading(true);
+                  const res = await api.post('/auth/mfa/disable');
+                  if (res.success) setMfaEnabled(false);
+                  setMfaLoading(false);
+                }}
+              >
+                {mfaLoading ? 'Disabling...' : 'Disable MFA'}
+              </Button>
+            ) : (
+              <Button onClick={() => router.push('/mfa-setup')}>Set Up MFA</Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden card-hover">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" />
+            Hotel Security Policy
+          </CardTitle>
+          <CardDescription>
+            Require all staff members to use two-factor authentication
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Require MFA for Staff</p>
+              <p className="text-sm text-muted-foreground">
+                Staff without MFA will be prompted to set it up on next login
+              </p>
+            </div>
+            <Button
+              variant={hotel.mfaRequired ? 'default' : 'outline'}
+              onClick={() => setHotel({ ...hotel, mfaRequired: !hotel.mfaRequired })}
+            >
+              {hotel.mfaRequired ? 'Required' : 'Optional'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

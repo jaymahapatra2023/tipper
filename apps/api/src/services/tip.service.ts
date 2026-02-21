@@ -3,6 +3,7 @@ import type { TipCreateInput } from '@tipper/shared';
 import { DEFAULT_PLATFORM_FEE_PERCENT } from '@tipper/shared';
 
 import { stripe } from '../config/stripe';
+import { emailService } from './email.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 
 export class TipService {
@@ -133,6 +134,11 @@ export class TipService {
 
     // Distribute tip to staff
     await this.distributeTip(tip.id);
+
+    // Notify staff of tip (non-blocking — email failure must not affect the tip)
+    this.notifyStaffOfTip(tip.id).catch((err) =>
+      console.error('Failed to send tip notification emails:', err),
+    );
   }
 
   async handlePaymentFailed(paymentIntentId: string) {
@@ -198,6 +204,33 @@ export class TipService {
             amount: perPerson + (i === 0 ? remainder : 0),
           },
         });
+      }
+    }
+  }
+
+  private async notifyStaffOfTip(tipId: string) {
+    const distributions = await prisma.tipDistribution.findMany({
+      where: { tipId },
+      include: {
+        staffMember: { include: { user: { select: { email: true, name: true } } } },
+        tip: {
+          select: { currency: true, message: true, room: { select: { roomNumber: true } } },
+        },
+      },
+    });
+
+    for (const dist of distributions) {
+      try {
+        await emailService.sendTipNotificationEmail(
+          dist.staffMember.user.email,
+          dist.staffMember.user.name,
+          dist.amount,
+          dist.tip.currency,
+          dist.tip.room.roomNumber,
+          dist.tip.message ?? undefined,
+        );
+      } catch (err) {
+        console.error(`Failed to notify staff ${dist.staffMember.user.email}:`, err);
       }
     }
   }

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Receipt, DollarSign, TrendingUp, DoorOpen } from 'lucide-react';
+import Link from 'next/link';
+import { Receipt, DollarSign, TrendingUp, DoorOpen, CheckCircle, Circle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,22 +11,89 @@ import { LoadingSpinner } from '@/components/shared/loading-spinner';
 import { EmptyState } from '@/components/shared/empty-state';
 import type { AdminAnalytics } from '@tipper/shared';
 
+interface HotelInfo {
+  id: string;
+  name: string;
+  status: string;
+  stripeOnboarded: boolean;
+}
+
 export default function AdminDashboardPage() {
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  const [hotel, setHotel] = useState<HotelInfo | null>(null);
+  const [staffCount, setStaffCount] = useState<number | null>(null);
+  const [roomCount, setRoomCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get<AdminAnalytics>('/admin/analytics/overview').then((res) => {
-      if (res.success && res.data) setAnalytics(res.data);
+    Promise.all([
+      api.get<AdminAnalytics>('/admin/analytics/overview'),
+      api.get<HotelInfo>('/admin/hotel'),
+      api.get<{ id: string }[]>('/admin/staff'),
+      api.get<{ id: string }[]>('/admin/rooms'),
+    ]).then(([analyticsRes, hotelRes, staffRes, roomsRes]) => {
+      if (analyticsRes.success && analyticsRes.data) setAnalytics(analyticsRes.data);
+      if (hotelRes.success && hotelRes.data) setHotel(hotelRes.data);
+      if (staffRes.success && staffRes.data) setStaffCount(staffRes.data.length);
+      if (roomsRes.success && roomsRes.data) setRoomCount(roomsRes.data.length);
       setLoading(false);
     });
   }, []);
 
   if (loading) return <LoadingSpinner />;
 
+  const showSetupWizard = hotel?.status === 'pending';
+
   return (
     <div className="space-y-8">
       <PageHeader title="Hotel Dashboard" description="Overview of your hotel's tipping activity" />
+
+      {showSetupWizard && (
+        <Card className="overflow-hidden border-primary/30 bg-primary/5">
+          <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+          <CardHeader>
+            <CardTitle>Welcome! Complete your hotel setup</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[
+                {
+                  done: (roomCount ?? 0) > 0,
+                  label: 'Add rooms',
+                  href: '/admin-rooms',
+                },
+                {
+                  done: (staffCount ?? 0) > 0,
+                  label: 'Add staff members',
+                  href: '/admin-staff',
+                },
+                {
+                  done: hotel?.stripeOnboarded ?? false,
+                  label: 'Connect Stripe to receive payments',
+                  href: '/admin-settings',
+                },
+              ].map((step) => (
+                <Link
+                  key={step.label}
+                  href={step.href}
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 transition-colors hover:bg-primary/10"
+                >
+                  {step.done ? (
+                    <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                  ) : (
+                    <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
+                  )}
+                  <span
+                    className={step.done ? 'text-muted-foreground line-through' : 'font-medium'}
+                  >
+                    {step.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="card-hover">

@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 import { stripe } from '../config/stripe';
+import { emailService } from './email.service';
 import { BadRequestError, NotFoundError, ConflictError, ForbiddenError } from '../utils/errors';
 
 export class AdminService {
@@ -54,14 +55,52 @@ export class AdminService {
           role: UserRole.STAFF,
         },
       });
-      // TODO: Send welcome email with temp password
-      console.log(`Temp password for ${input.email}: ${tempPassword}`);
+      await emailService.sendWelcomeEmail(input.email, input.name, tempPassword);
     }
 
     return prisma.staffMember.create({
       data: { userId: user.id, hotelId: admin.hotelId },
       include: { user: { select: { id: true, email: true, name: true } } },
     });
+  }
+
+  async resetStaffPassword(adminUserId: string, targetUserId: string) {
+    const admin = await this.getHotelAdmin(adminUserId);
+
+    // Verify target user is staff at this hotel
+    const staffMember = await prisma.staffMember.findFirst({
+      where: { userId: targetUserId, hotelId: admin.hotelId },
+      include: { user: true },
+    });
+    if (!staffMember) throw new NotFoundError('Staff member');
+
+    const tempPassword = crypto.randomBytes(8).toString('hex');
+    const passwordHash = await bcrypt.hash(tempPassword, PASSWORD_SALT_ROUNDS);
+
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { passwordHash },
+    });
+
+    // Invalidate all existing sessions
+    await prisma.refreshToken.deleteMany({ where: { userId: targetUserId } });
+
+    await emailService.sendAdminPasswordResetEmail(
+      staffMember.user.email,
+      staffMember.user.name,
+      tempPassword,
+    );
+
+    await prisma.auditLog.create({
+      data: {
+        userId: adminUserId,
+        action: 'admin_reset_password',
+        entityType: 'user',
+        entityId: targetUserId,
+      },
+    });
+
+    return { message: 'Password reset successfully' };
   }
 
   async deactivateStaff(userId: string, staffMemberId: string) {

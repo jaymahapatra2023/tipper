@@ -64,6 +64,18 @@ router.post(
   },
 );
 
+router.post(
+  '/staff/:id/reset-password',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await adminService.resetStaffPassword(req.user!.userId, req.params.id);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 router.delete('/staff/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     await adminService.deactivateStaff(req.user!.userId, req.params.id);

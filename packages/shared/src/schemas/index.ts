@@ -70,6 +70,19 @@ export const hotelRegisterSchema = z.object({
   totalFloors: z.number().int().min(1),
 });
 
+// Hotel onboarding (self-service registration)
+export const hotelOnboardSchema = z.object({
+  hotelName: z.string().min(1, 'Hotel name is required').max(200),
+  name: z.string().min(1, 'Your name is required').max(100),
+  email: z.string().email('Invalid email address'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
+});
+
 export const hotelSettingsSchema = z.object({
   suggestedAmounts: z.array(z.number().min(100)).min(1).max(5),
   minTipAmount: z.number().min(100),
@@ -77,6 +90,7 @@ export const hotelSettingsSchema = z.object({
   poolingEnabled: z.boolean(),
   poolingType: z.enum(['equal', 'weighted']).optional(),
   currency: z.string().length(3).default('usd'),
+  mfaRequired: z.boolean().optional(),
 });
 
 // Room schemas
@@ -139,12 +153,35 @@ export const dateRangeSchema = z.object({
     .optional(),
 });
 
+// MFA schemas
+export const mfaVerifySchema = z.object({
+  code: z.string().length(6, 'Code must be 6 digits').regex(/^\d+$/, 'Code must be numeric'),
+  mfaToken: z.string().min(1),
+});
+
+export const mfaRecoverySchema = z.object({
+  recoveryCode: z.string().min(1, 'Recovery code is required'),
+  mfaToken: z.string().min(1),
+});
+
+export const mfaSetupVerifySchema = z.object({
+  code: z.string().length(6, 'Code must be 6 digits').regex(/^\d+$/, 'Code must be numeric'),
+});
+
+export const adminResetPasswordSchema = z.object({
+  userId: z.string().uuid(),
+});
+
 // Type exports from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type TipCreateInput = z.infer<typeof tipCreateSchema>;
 export type HotelRegisterInput = z.infer<typeof hotelRegisterSchema>;
+export type HotelOnboardInput = z.infer<typeof hotelOnboardSchema>;
 export type HotelSettingsInput = z.infer<typeof hotelSettingsSchema>;
 export type RoomCreateInput = z.infer<typeof roomCreateSchema>;
 export type StaffCreateInput = z.infer<typeof staffCreateSchema>;
 export type AssignmentCreateInput = z.infer<typeof assignmentCreateSchema>;
+export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
+export type MfaRecoveryInput = z.infer<typeof mfaRecoverySchema>;
+export type MfaSetupVerifyInput = z.infer<typeof mfaSetupVerifySchema>;

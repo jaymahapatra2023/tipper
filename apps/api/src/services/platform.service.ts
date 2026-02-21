@@ -1,5 +1,9 @@
 import { prisma } from '@tipper/database';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { PASSWORD_SALT_ROUNDS } from '@tipper/shared';
 
+import { emailService } from './email.service';
 import { NotFoundError } from '../utils/errors';
 
 export class PlatformService {
@@ -83,6 +87,35 @@ export class PlatformService {
       where: { id: settings.id },
       data: { defaultPlatformFeePercent },
     });
+  }
+
+  async resetUserPassword(adminUserId: string, targetUserId: string) {
+    const user = await prisma.user.findUnique({ where: { id: targetUserId } });
+    if (!user) throw new NotFoundError('User');
+
+    const tempPassword = crypto.randomBytes(8).toString('hex');
+    const passwordHash = await bcrypt.hash(tempPassword, PASSWORD_SALT_ROUNDS);
+
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { passwordHash },
+    });
+
+    // Invalidate all sessions
+    await prisma.refreshToken.deleteMany({ where: { userId: targetUserId } });
+
+    await emailService.sendAdminPasswordResetEmail(user.email, user.name, tempPassword);
+
+    await prisma.auditLog.create({
+      data: {
+        userId: adminUserId,
+        action: 'platform_reset_password',
+        entityType: 'user',
+        entityId: targetUserId,
+      },
+    });
+
+    return { message: 'Password reset successfully' };
   }
 }
 

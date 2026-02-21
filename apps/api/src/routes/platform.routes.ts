@@ -76,4 +76,16 @@ router.put(
   },
 );
 
+router.post(
+  '/users/:id/reset-password',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await platformService.resetUserPassword(req.user!.userId, req.params.id);
+      sendSuccess(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 export { router as platformRoutes };

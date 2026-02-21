@@ -34,7 +34,7 @@ export default function HomePage() {
             seconds. Staff gets transparent payouts. Hotels get zero-cash operations.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/register">
+            <Link href="/register-hotel">
               <Button variant="gold" size="xl">
                 Launch for Your Hotel
               </Button>
