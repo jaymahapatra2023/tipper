@@ -6,10 +6,10 @@ applications:
           commands:
             - npm install -g pnpm@10
             - cd ../.. && pnpm install --no-frozen-lockfile
-            - export PATH="$PATH:$(cd ../.. && pwd)/node_modules/.bin" && prisma generate --schema=../../packages/database/prisma/schema.prisma
+            - npx prisma generate --schema=../../packages/database/prisma/schema.prisma
         build:
           commands:
-            - export PATH="$PATH:$(cd ../.. && pwd)/node_modules/.bin" && next build
+            - npx next build
       artifacts:
         baseDirectory: .next
         files:
