@@ -1,21 +1,22 @@
 version: 1
 applications:
-  - frontend:
+  - appRoot: apps/web
+    frontend:
+      buildPath: /
       phases:
         preBuild:
           commands:
             - npm install -g pnpm@10
-            - cd ../.. && pnpm install --no-frozen-lockfile
-            - npx prisma generate --schema=../../packages/database/prisma/schema.prisma
+            - pnpm install --no-frozen-lockfile
+            - pnpm --filter @tipper/database exec prisma generate
         build:
           commands:
-            - npx next build
+            - pnpm --filter @tipper/web run build
       artifacts:
-        baseDirectory: .next
+        baseDirectory: apps/web/.next
         files:
           - '**/*'
       cache:
         paths:
-          - ../../node_modules/**/*
           - node_modules/**/*
-    appRoot: apps/web
+          - apps/web/.next/cache/**/*
