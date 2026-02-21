@@ -43,7 +43,7 @@ export default function AdminDashboardPage() {
 
   if (loading) return <LoadingSpinner />;
 
-  const showSetupBanner = hotel?.status === 'pending' && (hotel?.onboardingStep ?? 0) < 5;
+  const showSetupBanner = (hotel?.onboardingStep ?? 0) < 5;
 
   return (
     <div className="space-y-8">
