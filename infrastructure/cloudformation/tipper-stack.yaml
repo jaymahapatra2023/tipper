@@ -94,6 +94,13 @@ Parameters:
     Description: Security group of the Aurora cluster (an inbound rule will be added)
 
 # ---------------------------------------------------------------------------
+# Conditions
+# ---------------------------------------------------------------------------
+Conditions:
+  HasStripeSecretKey: !Not [!Equals [!Ref StripeSecretKey, '']]
+  HasStripeWebhookSecret: !Not [!Equals [!Ref StripeWebhookSecret, '']]
+
+# ---------------------------------------------------------------------------
 # Resources
 # ---------------------------------------------------------------------------
 Resources:
@@ -133,6 +140,7 @@ Resources:
 
   SsmStripeSecretKey:
     Type: AWS::SSM::Parameter
+    Condition: HasStripeSecretKey
     Properties:
       Name: /tipper/prod/stripe-secret-key
       Type: String
@@ -141,6 +149,7 @@ Resources:
 
   SsmStripeWebhookSecret:
     Type: AWS::SSM::Parameter
+    Condition: HasStripeWebhookSecret
     Properties:
       Name: /tipper/prod/stripe-webhook-secret
       Type: String
@@ -240,8 +249,6 @@ Resources:
       - SsmJwtAccessSecret
       - SsmJwtRefreshSecret
       - SsmMfaEncryptionKey
-      - SsmStripeSecretKey
-      - SsmStripeWebhookSecret
     Properties:
       ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
       InstanceType: t3.micro
@@ -260,7 +267,7 @@ Resources:
           exec > /var/log/tipper-setup.log 2>&1
 
           echo "=== Installing Node.js 20 ==="
-          dnf module install -y nodejs:20/common
+          dnf install -y nodejs20 nodejs20-npm git
 
           echo "=== Installing pnpm & PM2 ==="
           npm install -g pnpm@10 pm2
@@ -280,8 +287,8 @@ Resources:
           echo "=== Generating Prisma client ==="
           sudo -u ec2-user pnpm --filter @tipper/database exec prisma generate
 
-          echo "=== Building API ==="
-          sudo -u ec2-user pnpm --filter @tipper/api build
+          echo "=== Installing tsx globally ==="
+          npm install -g tsx
 
           echo "=== Fetching secrets from SSM ==="
           REGION="${AWS::Region}"
@@ -293,8 +300,8 @@ Resources:
           JWT_ACCESS_SECRET=$(get_param /tipper/prod/jwt-access-secret)
           JWT_REFRESH_SECRET=$(get_param /tipper/prod/jwt-refresh-secret)
           MFA_ENCRYPTION_KEY=$(get_param /tipper/prod/mfa-encryption-key)
-          STRIPE_SECRET_KEY=$(get_param /tipper/prod/stripe-secret-key)
-          STRIPE_WEBHOOK_SECRET=$(get_param /tipper/prod/stripe-webhook-secret)
+          STRIPE_SECRET_KEY=$(get_param /tipper/prod/stripe-secret-key 2>/dev/null || echo "")
+          STRIPE_WEBHOOK_SECRET=$(get_param /tipper/prod/stripe-webhook-secret 2>/dev/null || echo "")
 
           cat > /home/ec2-user/tipper/.env <<ENVEOF
           NODE_ENV=production
@@ -316,7 +323,7 @@ Resources:
           sudo -u ec2-user pnpm --filter @tipper/database exec prisma migrate deploy
 
           echo "=== Starting API with PM2 ==="
-          sudo -u ec2-user pm2 start apps/api/dist/index.js --name tipper-api
+          sudo -u ec2-user pm2 start "npx tsx apps/api/src/index.ts" --name tipper-api
           sudo -u ec2-user pm2 save
 
           echo "=== Configuring PM2 startup ==="
@@ -347,25 +354,26 @@ Resources:
                 preBuild:
                   commands:
                     - npm install -g pnpm@10
-                    - pnpm install --frozen-lockfile
+                    - cd ../.. && pnpm install --frozen-lockfile
                 build:
                   commands:
-                    - pnpm --filter @tipper/web build
+                    - cd ../.. && pnpm --filter @tipper/web build
               artifacts:
-                baseDirectory: apps/web/.next
+                baseDirectory: .next
                 files:
                   - '**/*'
               cache:
                 paths:
+                  - ../../node_modules/**/*
                   - node_modules/**/*
-            appRoot: .
+            appRoot: apps/web
       EnvironmentVariables:
         - Name: NEXT_PUBLIC_API_URL
           Value: !Sub http://${TipperApiEip}:4000/api/v1
         - Name: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
           Value: !Ref StripePublishableKey
         - Name: AMPLIFY_MONOREPO_APP_ROOT
-          Value: .
+          Value: apps/web
 
   TipperAmplifyBranch:
     Type: AWS::Amplify::Branch
