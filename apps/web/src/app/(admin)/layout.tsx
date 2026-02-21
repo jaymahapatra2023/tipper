@@ -24,8 +24,9 @@ const adminNav = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen">
-      <Sidebar items={adminNav} title="Hotel Admin" />
-      <main className="flex-1 overflow-auto bg-surface bg-dot-pattern p-8">{children}</main>
+      <Sidebar items={adminNav} title="Hotel Admin">
+        {children}
+      </Sidebar>
     </div>
   );
 }

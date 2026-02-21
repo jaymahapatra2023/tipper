@@ -14,8 +14,9 @@ const staffNav = [
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen">
-      <Sidebar items={staffNav} title="Staff Portal" />
-      <main className="flex-1 overflow-auto bg-surface bg-dot-pattern p-8">{children}</main>
+      <Sidebar items={staffNav} title="Staff Portal">
+        {children}
+      </Sidebar>
     </div>
   );
 }
