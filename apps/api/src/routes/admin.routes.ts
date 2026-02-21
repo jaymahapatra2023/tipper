@@ -10,6 +10,7 @@ import {
 
 import { adminService } from '../services/admin.service';
 import { qrService } from '../services/qr.service';
+import { qrExportService } from '../services/qr-export.service';
 import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess } from '../utils/response';
@@ -143,6 +144,55 @@ router.post('/rooms/:id/qr/regenerate', async (req: Request, res: Response, next
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const result = await qrService.regenerate(req.params.id as string, appUrl);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// QR Bulk Operations
+router.get('/qr/download/zip', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const hotel = await adminService.getHotel(req.user!.userId);
+    const qrData = await qrService.getAllActiveQrCodes(hotel!.id, appUrl);
+
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="qr-codes-${hotel!.name.replace(/[^a-zA-Z0-9]/g, '-')}.zip"`,
+    });
+
+    const stream = qrExportService.generateZip(qrData);
+    stream.pipe(res);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/qr/download/pdf', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const hotel = await adminService.getHotel(req.user!.userId);
+    const qrData = await qrService.getAllActiveQrCodes(hotel!.id, appUrl);
+    const pdfBuffer = await qrExportService.generatePdf(qrData, hotel!.name);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="qr-codes-${hotel!.name.replace(/[^a-zA-Z0-9]/g, '-')}.pdf"`,
+      'Content-Length': String(pdfBuffer.length),
+    });
+
+    res.send(pdfBuffer);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/qr/regenerate-all', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const hotel = await adminService.getHotel(req.user!.userId);
+    const result = await qrService.regenerateAll(hotel!.id, appUrl);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

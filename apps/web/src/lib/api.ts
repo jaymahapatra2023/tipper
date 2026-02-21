@@ -74,6 +74,25 @@ class ApiClient {
   delete<T>(path: string) {
     return this.request<T>(path, { method: 'DELETE' });
   }
+
+  async downloadBlob(path: string): Promise<Blob> {
+    const headers: Record<string, string> = {};
+    if (this.accessToken) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      throw new Error(`Download failed: ${res.statusText}`);
+    }
+
+    return res.blob();
+  }
 }
 
 export const api = new ApiClient();

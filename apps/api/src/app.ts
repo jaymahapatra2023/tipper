@@ -27,6 +27,7 @@ app.use(
   cors({
     origin: env.CORS_ORIGIN,
     credentials: true,
+    exposedHeaders: ['Content-Disposition'],
   }),
 );
 app.use(express.json());

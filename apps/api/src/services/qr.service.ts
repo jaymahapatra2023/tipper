@@ -98,6 +98,46 @@ export class QrService {
       include: { room: true },
     });
   }
+
+  async generateHighResBuffer(url: string): Promise<Buffer> {
+    return QRCode.toBuffer(url, {
+      width: 1200,
+      margin: 2,
+      errorCorrectionLevel: 'H',
+      color: { dark: '#000000', light: '#ffffff' },
+    });
+  }
+
+  async getAllActiveQrCodes(hotelId: string, appUrl: string) {
+    const rooms = await prisma.room.findMany({
+      where: { hotelId, isActive: true },
+      include: { qrCodes: { where: { status: 'active' }, take: 1 } },
+      orderBy: [{ floor: 'asc' }, { roomNumber: 'asc' }],
+    });
+
+    return rooms
+      .filter((r) => r.qrCodes.length > 0)
+      .map((r) => ({
+        roomNumber: r.roomNumber,
+        floor: r.floor,
+        code: r.qrCodes[0].code,
+        url: `${appUrl}/tip/${r.qrCodes[0].code}`,
+      }));
+  }
+
+  async regenerateAll(hotelId: string, appUrl: string) {
+    const rooms = await prisma.room.findMany({
+      where: { hotelId, isActive: true },
+    });
+
+    let generated = 0;
+    for (const room of rooms) {
+      await this.generateForRoom(room.id, appUrl);
+      generated++;
+    }
+
+    return { generated, total: rooms.length };
+  }
 }
 
 export const qrService = new QrService();
