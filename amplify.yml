@@ -5,10 +5,11 @@ applications:
         preBuild:
           commands:
             - npm install -g pnpm@10
-            - cd ../.. && pnpm install --frozen-lockfile
+            - cd ../.. && pnpm install --no-frozen-lockfile
+            - cd ../.. && pnpm --filter @tipper/database exec prisma generate
         build:
           commands:
-            - cd ../.. && pnpm --filter @tipper/web build
+            - export PATH="$PATH:$(pwd)/../../node_modules/.bin" && next build
       artifacts:
         baseDirectory: .next
         files:
