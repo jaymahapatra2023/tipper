@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DollarSign, Clock, TrendingUp, DoorOpen } from 'lucide-react';
+import { DollarSign, Clock, TrendingUp, DoorOpen, Receipt } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 import type { StaffDashboard } from '@tipper/shared';
 
 export default function StaffDashboardPage() {
@@ -21,9 +23,7 @@ export default function StaffDashboardPage() {
     });
   }, []);
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64">Loading...</div>;
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (!dashboard) {
     return <div className="text-center text-muted-foreground">Failed to load dashboard</div>;
@@ -34,12 +34,13 @@ export default function StaffDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">Hello, {firstName}!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Hello, {firstName}!</h1>
         <p className="text-muted-foreground mt-1">Here&apos;s your earnings overview</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-primary/20 bg-primary/5">
+        <Card className="overflow-hidden border-primary/20 bg-primary/5">
+          <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Earnings
@@ -78,7 +79,11 @@ export default function StaffDashboardPage() {
         </CardHeader>
         <CardContent>
           {dashboard.recentTips.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No tips received yet</p>
+            <EmptyState
+              icon={Receipt}
+              title="No tips received yet"
+              description="Tips will appear here as guests leave them"
+            />
           ) : (
             <div className="space-y-4">
               {dashboard.recentTips.map((tip) => (

@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/page-header';
 
 interface StripeStatus {
   stripeAccountId: string | null;
@@ -52,10 +53,11 @@ export default function StaffSettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Settings</h1>
+    <div className="space-y-8">
+      <PageHeader title="Settings" description="Manage your profile and payout preferences" />
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Profile</CardTitle>
         </CardHeader>
@@ -69,7 +71,8 @@ export default function StaffSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Tip Pooling</CardTitle>
           <CardDescription>
@@ -86,7 +89,8 @@ export default function StaffSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Bank Account</CardTitle>
           <CardDescription>Connect your bank account to receive payouts</CardDescription>

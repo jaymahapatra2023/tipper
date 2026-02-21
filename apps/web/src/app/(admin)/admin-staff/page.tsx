@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Users } from 'lucide-react';
 import { staffCreateSchema, type StaffCreateInput } from '@tipper/shared';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface StaffMember {
   id: string;
@@ -53,11 +57,10 @@ export default function AdminStaffPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Staff Management</h1>
+    <div className="space-y-8">
+      <PageHeader title="Staff Management" description="Manage your hotel's cleaning staff">
         <Button onClick={() => setShowForm(!showForm)}>{showForm ? 'Cancel' : 'Add Staff'}</Button>
-      </div>
+      </PageHeader>
 
       {showForm && (
         <Card>
@@ -87,15 +90,21 @@ export default function AdminStaffPage() {
       <Card>
         <CardContent className="pt-6">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <LoadingSpinner />
           ) : staff.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No staff members</p>
+            <EmptyState
+              icon={Users}
+              title="No staff members"
+              description="Add your first staff member to get started"
+            >
+              <Button onClick={() => setShowForm(true)}>Add Staff</Button>
+            </EmptyState>
           ) : (
             <div className="space-y-4">
               {staff.map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0"
+                  className="flex items-center justify-between border-b pb-4 last:border-0 hover:bg-muted/50 transition-colors rounded-md px-2 -mx-2"
                 >
                   <div>
                     <p className="font-medium">{s.user.name}</p>

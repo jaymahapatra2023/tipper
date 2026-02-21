@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 interface PlatformSettings {
   id: string;
@@ -33,13 +35,14 @@ export default function PlatformSettingsPage() {
     setSaving(false);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>;
+  if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Platform Settings</h1>
+    <div className="space-y-8">
+      <PageHeader title="Platform Settings" description="Configure platform-wide settings" />
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Fee Configuration</CardTitle>
           <CardDescription>Set the default platform fee percentage for all hotels</CardDescription>

@@ -39,67 +39,74 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <Link href="/" className="text-2xl font-bold text-primary mb-2 block">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-muted/30 via-background to-muted/30">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="text-3xl font-bold tracking-tight text-primary">
             Tipper
           </Link>
-          <CardTitle>Create Account</CardTitle>
-          <CardDescription>Sign up for a Tipper account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" {...form.register('name')} placeholder="John Doe" />
-              {form.formState.errors.name && (
-                <p className="text-sm text-destructive mt-1">
-                  {form.formState.errors.name.message}
+          <p className="text-sm text-muted-foreground mt-1">Cashless tipping for modern hotels</p>
+        </div>
+
+        <Card className="overflow-hidden">
+          <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+          <CardHeader className="text-center">
+            <CardTitle>Create Account</CardTitle>
+            <CardDescription>Get started with Tipper</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" {...form.register('name')} placeholder="John Doe" />
+                {form.formState.errors.name && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.name.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  {...form.register('email')}
+                  placeholder="you@example.com"
+                />
+                {form.formState.errors.email && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.email.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input id="password" type="password" {...form.register('password')} />
+                {form.formState.errors.password && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.password.message}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Must be 8+ characters with uppercase, lowercase, and number
                 </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                {...form.register('email')}
-                placeholder="you@example.com"
-              />
-              {form.formState.errors.email && (
-                <p className="text-sm text-destructive mt-1">
-                  {form.formState.errors.email.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" {...form.register('password')} />
-              {form.formState.errors.password && (
-                <p className="text-sm text-destructive mt-1">
-                  {form.formState.errors.password.message}
-                </p>
-              )}
-              <p className="text-xs text-muted-foreground mt-1">
-                Must be 8+ characters with uppercase, lowercase, and number
-              </p>
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? 'Creating account...' : 'Create Account'}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="justify-center">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link href="/login" className="text-primary hover:underline">
-              Log in
-            </Link>
-          </p>
-        </CardFooter>
-      </Card>
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'Creating account...' : 'Create Account'}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="justify-center">
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link href="/login" className="text-primary hover:underline">
+                Log in
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ClipboardList } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface Assignment {
   id: string;
@@ -35,15 +39,19 @@ export default function StaffAssignmentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Room Assignments</h1>
+    <div className="space-y-8">
+      <PageHeader title="Room Assignments" description="View and claim your assigned rooms" />
 
       <Card>
         <CardContent className="pt-6">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <LoadingSpinner />
           ) : assignments.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No assignments</p>
+            <EmptyState
+              icon={ClipboardList}
+              title="No assignments"
+              description="You'll see room assignments here when they're available"
+            />
           ) : (
             <div className="space-y-4">
               {assignments.map((a) => (

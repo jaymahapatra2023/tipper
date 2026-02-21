@@ -1,12 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Receipt, DollarSign, Wallet, TrendingUp, BarChart3 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface AnalyticsData {
   totalTips: number;
@@ -41,8 +45,8 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Analytics</h1>
+    <div className="space-y-8">
+      <PageHeader title="Analytics" description="Analyze tipping trends and revenue" />
 
       <Card>
         <CardContent className="pt-6">
@@ -62,38 +66,42 @@ export default function AdminAnalyticsPage() {
       </Card>
 
       {loading ? (
-        <p className="text-center text-muted-foreground py-8">Loading...</p>
+        <LoadingSpinner />
       ) : (
         data && (
           <>
             <div className="grid gap-4 md:grid-cols-4">
               <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Total Tips</CardTitle>
+                  <Receipt className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">{data.totalTips}</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Gross Amount</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">{formatCurrency(data.totalAmount)}</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Net Amount</CardTitle>
+                  <Wallet className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">{formatCurrency(data.netAmount)}</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Average Tip</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <p className="text-2xl font-bold">{formatCurrency(data.averageTip)}</p>
@@ -107,7 +115,11 @@ export default function AdminAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 {data.tipsByRoom.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-4">No data</p>
+                  <EmptyState
+                    icon={BarChart3}
+                    title="No data for this period"
+                    description="Try adjusting the date range"
+                  />
                 ) : (
                   <div className="space-y-2">
                     {data.tipsByRoom.map((r) => (

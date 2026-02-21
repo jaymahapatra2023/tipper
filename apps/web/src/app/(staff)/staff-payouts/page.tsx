@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Wallet } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface Payout {
   id: string;
@@ -40,15 +44,19 @@ export default function StaffPayoutsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Payouts</h1>
+    <div className="space-y-8">
+      <PageHeader title="Payouts" description="Track your payout history and status" />
 
       <Card>
         <CardContent className="pt-6">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <LoadingSpinner />
           ) : payouts.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No payouts yet</p>
+            <EmptyState
+              icon={Wallet}
+              title="No payouts yet"
+              description="Your payout history will appear here"
+            />
           ) : (
             <div className="space-y-4">
               {payouts.map((p) => (

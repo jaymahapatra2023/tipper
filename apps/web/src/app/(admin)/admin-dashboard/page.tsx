@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Receipt, DollarSign, TrendingUp, DoorOpen } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 import type { AdminAnalytics } from '@tipper/shared';
 
 export default function AdminDashboardPage() {
@@ -17,44 +21,48 @@ export default function AdminDashboardPage() {
     });
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>;
+  if (loading) return <LoadingSpinner />;
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Hotel Dashboard</h1>
+      <PageHeader title="Hotel Dashboard" description="Overview of your hotel's tipping activity" />
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total Tips</CardTitle>
+            <Receipt className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{analytics?.totalTips || 0}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Amount
             </CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{formatCurrency(analytics?.totalAmount || 0)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Average Tip</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{formatCurrency(analytics?.averageTip || 0)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Rooms with Tips
             </CardTitle>
+            <DoorOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{analytics?.tipsByRoom?.length || 0}</p>
@@ -81,7 +89,11 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-4">No data yet</p>
+              <EmptyState
+                icon={DoorOpen}
+                title="No room data yet"
+                description="Tips will appear here once guests start tipping"
+              />
             )}
           </CardContent>
         </Card>
@@ -104,7 +116,11 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-4">No data yet</p>
+              <EmptyState
+                icon={TrendingUp}
+                title="No staff data yet"
+                description="Staff tip totals will appear here"
+              />
             )}
           </CardContent>
         </Card>

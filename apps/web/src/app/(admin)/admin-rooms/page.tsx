@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { DoorOpen } from 'lucide-react';
 import { roomCreateSchema, type RoomCreateInput } from '@tipper/shared';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface RoomData {
   id: string;
@@ -58,11 +62,10 @@ export default function AdminRoomsPage() {
   }, {});
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Room Management</h1>
+    <div className="space-y-8">
+      <PageHeader title="Room Management" description="Manage hotel rooms and QR codes">
         <Button onClick={() => setShowForm(!showForm)}>{showForm ? 'Cancel' : 'Add Room'}</Button>
-      </div>
+      </PageHeader>
 
       {showForm && (
         <Card>
@@ -96,7 +99,13 @@ export default function AdminRoomsPage() {
       )}
 
       {loading ? (
-        <p className="text-center text-muted-foreground py-8">Loading...</p>
+        <LoadingSpinner />
+      ) : Object.keys(byFloor).length === 0 ? (
+        <EmptyState
+          icon={DoorOpen}
+          title="No rooms yet"
+          description="Add your first room to get started"
+        />
       ) : (
         Object.entries(byFloor)
           .sort(([a], [b]) => Number(a) - Number(b))

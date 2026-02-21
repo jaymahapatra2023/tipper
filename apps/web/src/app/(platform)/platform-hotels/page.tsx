@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Building2 } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface HotelListItem {
   id: string;
@@ -55,8 +59,8 @@ export default function PlatformHotelsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Hotels</h1>
+    <div className="space-y-8">
+      <PageHeader title="Hotels" description="Manage hotels on the platform" />
 
       <div className="flex gap-2">
         {['', 'pending', 'approved', 'suspended'].map((f) => (
@@ -74,15 +78,19 @@ export default function PlatformHotelsPage() {
       <Card>
         <CardContent className="pt-6">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <LoadingSpinner />
           ) : hotels.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No hotels found</p>
+            <EmptyState
+              icon={Building2}
+              title="No hotels found"
+              description="Hotels will appear here once they register"
+            />
           ) : (
             <div className="space-y-4">
               {hotels.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0"
+                  className="flex items-center justify-between border-b pb-4 last:border-0 hover:bg-muted/50 transition-colors rounded-md px-2 -mx-2"
                 >
                   <div>
                     <p className="font-medium">{h.name}</p>

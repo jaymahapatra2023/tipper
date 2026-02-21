@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { QrCode } from 'lucide-react';
 import { api } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface RoomWithQr {
   id: string;
@@ -34,22 +38,27 @@ export default function AdminQrCodesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">QR Codes</h1>
+    <div className="space-y-8">
+      <PageHeader title="QR Codes" description="Manage QR codes for each room">
         <Button variant="outline">Download All (ZIP)</Button>
-      </div>
+      </PageHeader>
 
       <Card>
         <CardContent className="pt-6">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <LoadingSpinner />
+          ) : rooms.length === 0 ? (
+            <EmptyState
+              icon={QrCode}
+              title="No rooms yet"
+              description="Add rooms first, then generate QR codes"
+            />
           ) : (
             <div className="space-y-4">
               {rooms.map((room) => (
                 <div
                   key={room.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0"
+                  className="flex items-center justify-between border-b pb-4 last:border-0 hover:bg-muted/50 transition-colors rounded-md px-2 -mx-2"
                 >
                   <div>
                     <p className="font-medium">Room {room.roomNumber}</p>

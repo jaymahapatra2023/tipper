@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 interface HotelData {
   id: string;
@@ -77,14 +79,15 @@ export default function AdminSettingsPage() {
     setStripeLoading(false);
   }
 
-  if (loading) return <div className="flex items-center justify-center h-64">Loading...</div>;
+  if (loading) return <LoadingSpinner />;
   if (!hotel) return <div>Failed to load hotel settings</div>;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Hotel Settings</h1>
+    <div className="space-y-8">
+      <PageHeader title="Hotel Settings" description="Configure your hotel's tipping preferences" />
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Stripe Connect</CardTitle>
           <CardDescription>Connect your Stripe account to receive tip payments</CardDescription>
@@ -124,7 +127,8 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Tip Configuration</CardTitle>
           <CardDescription>Configure suggested tip amounts and limits</CardDescription>
@@ -176,7 +180,8 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="overflow-hidden">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Tip Pooling</CardTitle>
           <CardDescription>Configure how tips are distributed among staff</CardDescription>

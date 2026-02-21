@@ -1,11 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Receipt } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { EmptyState } from '@/components/shared/empty-state';
 
 interface TipItem {
   id: string;
@@ -34,15 +38,19 @@ export default function StaffTipsPage() {
   }, [page]);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">My Tips</h1>
+    <div className="space-y-8">
+      <PageHeader title="My Tips" description="View your complete tip history" />
 
       <Card>
         <CardContent className="pt-6">
           {loading ? (
-            <p className="text-center text-muted-foreground py-8">Loading...</p>
+            <LoadingSpinner />
           ) : tips.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No tips received yet</p>
+            <EmptyState
+              icon={Receipt}
+              title="No tips received yet"
+              description="Your tip history will appear here"
+            />
           ) : (
             <>
               <div className="space-y-4">
