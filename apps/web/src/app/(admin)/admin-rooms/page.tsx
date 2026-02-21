@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { DoorOpen } from 'lucide-react';
 import { roomCreateSchema, type RoomCreateInput } from '@tipper/shared';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,8 @@ interface RoomData {
 }
 
 export default function AdminRoomsPage() {
+  const t = useTranslations('admin');
+  const tc = useTranslations('common');
   const [rooms, setRooms] = useState<RoomData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -63,24 +66,26 @@ export default function AdminRoomsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Room Management" description="Manage hotel rooms and QR codes">
-        <Button onClick={() => setShowForm(!showForm)}>{showForm ? 'Cancel' : 'Add Room'}</Button>
+      <PageHeader title={t('roomsTitle')} description={t('roomsDesc')}>
+        <Button onClick={() => setShowForm(!showForm)}>
+          {showForm ? tc('cancel') : t('addRoom')}
+        </Button>
       </PageHeader>
 
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>Add Room</CardTitle>
+            <CardTitle>{t('addRoom')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <Label htmlFor="roomNumber">Room Number</Label>
+                  <Label htmlFor="roomNumber">{t('roomNumber')}</Label>
                   <Input id="roomNumber" {...form.register('roomNumber')} />
                 </div>
                 <div>
-                  <Label htmlFor="floor">Floor</Label>
+                  <Label htmlFor="floor">{t('floor')}</Label>
                   <Input
                     id="floor"
                     type="number"
@@ -88,11 +93,11 @@ export default function AdminRoomsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="roomType">Type (optional)</Label>
+                  <Label htmlFor="roomType">{t('typeOptional')}</Label>
                   <Input id="roomType" {...form.register('roomType')} placeholder="standard" />
                 </div>
               </div>
-              <Button type="submit">Add Room</Button>
+              <Button type="submit">{t('addRoom')}</Button>
             </form>
           </CardContent>
         </Card>
@@ -101,18 +106,16 @@ export default function AdminRoomsPage() {
       {loading ? (
         <LoadingSpinner />
       ) : Object.keys(byFloor).length === 0 ? (
-        <EmptyState
-          icon={DoorOpen}
-          title="No rooms yet"
-          description="Add your first room to get started"
-        />
+        <EmptyState icon={DoorOpen} title={t('noRoomsYet')} description={t('addFirstRoom')} />
       ) : (
         Object.entries(byFloor)
           .sort(([a], [b]) => Number(a) - Number(b))
           .map(([floor, floorRooms]) => (
             <Card key={floor}>
               <CardHeader>
-                <CardTitle>Floor {floor}</CardTitle>
+                <CardTitle>
+                  {t('floor')} {floor}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -122,13 +125,15 @@ export default function AdminRoomsPage() {
                       className="flex items-center justify-between rounded-xl border-border/60 border p-4 transition-all hover:shadow-sm"
                     >
                       <div>
-                        <p className="font-medium">Room {room.roomNumber}</p>
+                        <p className="font-medium">
+                          {t('roomNumber')} {room.roomNumber}
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           {room.roomType || 'standard'}
                         </p>
                       </div>
                       <Badge variant={room.qrCodes.length > 0 ? 'success' : 'secondary'}>
-                        {room.qrCodes.length > 0 ? 'QR Active' : 'No QR'}
+                        {room.qrCodes.length > 0 ? t('qrActive') : t('noQr')}
                       </Badge>
                     </div>
                   ))}

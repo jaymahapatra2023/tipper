@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Receipt, Star } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +25,9 @@ interface TipItem {
 }
 
 export default function StaffTipsPage() {
+  const t = useTranslations('staff');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [tips, setTips] = useState<TipItem[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -41,7 +46,7 @@ export default function StaffTipsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="My Tips" description="View your complete tip history" />
+      <PageHeader title={t('tipsTitle')} description={t('tipsDesc')} />
 
       <Card>
         <CardContent className="pt-6">
@@ -50,8 +55,8 @@ export default function StaffTipsPage() {
           ) : tips.length === 0 ? (
             <EmptyState
               icon={Receipt}
-              title="No tips received yet"
-              description="Your tip history will appear here"
+              title={t('noTipHistory')}
+              description={t('tipHistoryAppear')}
             />
           ) : (
             <>
@@ -63,7 +68,9 @@ export default function StaffTipsPage() {
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">Room {tip.roomNumber}</p>
+                        <p className="font-medium">
+                          {t('room')} {tip.roomNumber}
+                        </p>
                         {tip.rating != null && (
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map((s) => (
@@ -80,7 +87,8 @@ export default function StaffTipsPage() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {formatDate(tip.date)} - {tip.tipMethod === 'per_day' ? 'Per Day' : 'Flat'}
+                        {formatDate(tip.date, locale)} -{' '}
+                        {tip.tipMethod === 'per_day' ? t('perDay') : 'Flat'}
                       </p>
                       {tip.message && (
                         <p className="text-sm italic mt-1">&quot;{tip.message}&quot;</p>
@@ -98,13 +106,13 @@ export default function StaffTipsPage() {
                         </div>
                       )}
                     </div>
-                    <Badge variant="success">{formatCurrency(tip.amount)}</Badge>
+                    <Badge variant="success">{formatCurrency(tip.amount, 'usd', locale)}</Badge>
                   </div>
                 ))}
               </div>
               <div className="flex justify-between items-center mt-6">
                 <p className="text-sm text-muted-foreground">
-                  Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} of {total}
+                  {tc('showing')} {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} of {total}
                 </p>
                 <div className="flex gap-2">
                   <Button

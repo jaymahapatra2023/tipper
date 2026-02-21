@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Building2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,8 @@ interface HotelListItem {
 }
 
 export default function PlatformHotelsPage() {
+  const t = useTranslations('platform');
+  const tc = useTranslations('common');
   const [hotels, setHotels] = useState<HotelListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('');
@@ -50,17 +53,17 @@ export default function PlatformHotelsPage() {
   const statusBadge = (status: string) => {
     switch (status) {
       case 'approved':
-        return <Badge variant="success">Approved</Badge>;
+        return <Badge variant="success">{t('approved')}</Badge>;
       case 'suspended':
-        return <Badge variant="destructive">Suspended</Badge>;
+        return <Badge variant="destructive">{t('suspended')}</Badge>;
       default:
-        return <Badge variant="warning">Pending</Badge>;
+        return <Badge variant="warning">{tc('pending')}</Badge>;
     }
   };
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Hotels" description="Manage hotels on the platform" />
+      <PageHeader title={t('hotelsTitle')} description={t('hotelsDesc')} />
 
       <div className="flex gap-2">
         {['', 'pending', 'approved', 'suspended'].map((f) => (
@@ -71,7 +74,7 @@ export default function PlatformHotelsPage() {
             className="rounded-full"
             onClick={() => setFilter(f)}
           >
-            {f || 'All'}
+            {f || tc('allActions').split(' ')[0]}
           </Button>
         ))}
       </div>
@@ -83,8 +86,8 @@ export default function PlatformHotelsPage() {
           ) : hotels.length === 0 ? (
             <EmptyState
               icon={Building2}
-              title="No hotels found"
-              description="Hotels will appear here once they register"
+              title={t('noHotels')}
+              description={t('hotelsWillAppear')}
             />
           ) : (
             <div className="space-y-1">
@@ -96,25 +99,25 @@ export default function PlatformHotelsPage() {
                   <div>
                     <p className="font-medium">{h.name}</p>
                     <p className="text-sm text-muted-foreground">
-                      {h.city}, {h.state} | {h._count.rooms} rooms | {h._count.staffMembers} staff |{' '}
-                      {h._count.tips} tips
+                      {h.city}, {h.state} | {h._count.rooms} {t('rooms')} | {h._count.staffMembers}{' '}
+                      {t('staffCount')} | {h._count.tips} tips
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {statusBadge(h.status)}
                     {h.status === 'pending' && (
                       <Button size="sm" onClick={() => approveHotel(h.id)}>
-                        Approve
+                        {t('approve')}
                       </Button>
                     )}
                     {h.status === 'approved' && (
                       <Button size="sm" variant="destructive" onClick={() => suspendHotel(h.id)}>
-                        Suspend
+                        {t('suspend')}
                       </Button>
                     )}
                     {h.status === 'suspended' && (
                       <Button size="sm" onClick={() => approveHotel(h.id)}>
-                        Reactivate
+                        {t('approve')}
                       </Button>
                     )}
                   </div>

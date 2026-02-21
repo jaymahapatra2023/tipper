@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Star,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +22,9 @@ import type { ReceiptData } from '@tipper/shared';
 export default function ReceiptPage() {
   const params = useParams();
   const token = params.token as string;
+  const t = useTranslations('guest');
+  const tc = useTranslations('common');
+  const locale = useLocale();
 
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [error, setError] = useState('');
@@ -30,7 +35,7 @@ export default function ReceiptPage() {
       if (res.success && res.data) {
         setReceipt(res.data);
       } else {
-        setError(res.error?.message || 'Receipt not found');
+        setError(res.error?.message || t('receiptNotFound'));
       }
       setLoading(false);
     });
@@ -60,10 +65,8 @@ export default function ReceiptPage() {
       <div className="flex flex-1 items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-8 pb-8 text-center space-y-3">
-            <p className="text-lg font-semibold text-destructive">Receipt Not Found</p>
-            <p className="text-sm text-muted-foreground">
-              {error || 'This receipt link is invalid or has expired.'}
-            </p>
+            <p className="text-lg font-semibold text-destructive">{t('receiptNotFound')}</p>
+            <p className="text-sm text-muted-foreground">{error || t('receiptInvalid')}</p>
           </CardContent>
         </Card>
       </div>
@@ -78,9 +81,11 @@ export default function ReceiptPage() {
           <CheckCircle2 className="h-10 w-10 text-primary" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Tip Receipt</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{t('receiptTitle')}</h2>
           {receipt.guestName && (
-            <p className="mt-2 text-muted-foreground">Thank you, {receipt.guestName}!</p>
+            <p className="mt-2 text-muted-foreground">
+              {t('thankYouGuest', { name: receipt.guestName })}
+            </p>
           )}
         </div>
 
@@ -88,19 +93,19 @@ export default function ReceiptPage() {
           <CardContent className="pt-6">
             <div className="mb-4 text-center">
               <span className="text-3xl font-bold text-primary">
-                {formatCurrency(receipt.totalAmount, receipt.currency)}
+                {formatCurrency(receipt.totalAmount, receipt.currency, locale)}
               </span>
             </div>
             <div className="divide-y divide-border/50">
               <div className="flex items-center gap-3 py-3">
                 <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-muted-foreground">Hotel</span>
+                <span className="text-sm text-muted-foreground">{t('hotel')}</span>
                 <span className="ml-auto text-sm font-medium text-right">{receipt.hotelName}</span>
               </div>
               {receipt.hotelAddress && (
                 <div className="flex items-center gap-3 py-3">
                   <span className="w-4" />
-                  <span className="text-sm text-muted-foreground">Address</span>
+                  <span className="text-sm text-muted-foreground">{t('address')}</span>
                   <span className="ml-auto text-sm font-medium text-right">
                     {receipt.hotelAddress}
                   </span>
@@ -108,18 +113,20 @@ export default function ReceiptPage() {
               )}
               <div className="flex items-center gap-3 py-3">
                 <DoorOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-muted-foreground">Room</span>
+                <span className="text-sm text-muted-foreground">{t('room')}</span>
                 <span className="ml-auto text-sm font-medium">{receipt.roomNumber}</span>
               </div>
               <div className="flex items-center gap-3 py-3">
                 <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm text-muted-foreground">Date Paid</span>
-                <span className="ml-auto text-sm font-medium">{formatDate(receipt.paidAt)}</span>
+                <span className="text-sm text-muted-foreground">{t('datePaid')}</span>
+                <span className="ml-auto text-sm font-medium">
+                  {formatDate(receipt.paidAt, locale)}
+                </span>
               </div>
               {receipt.staffNames.length > 0 && (
                 <div className="flex items-center gap-3 py-3">
                   <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground">Staff</span>
+                  <span className="text-sm text-muted-foreground">{t('staffLabel')}</span>
                   <span className="ml-auto text-sm font-medium text-right">
                     {receipt.staffNames.join(', ')}
                   </span>
@@ -128,7 +135,7 @@ export default function ReceiptPage() {
               {receipt.message && (
                 <div className="flex items-start gap-3 py-3">
                   <MessageSquare className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground">Message</span>
+                  <span className="text-sm text-muted-foreground">{t('message')}</span>
                   <span className="ml-auto text-sm font-medium text-right italic">
                     &ldquo;{receipt.message}&rdquo;
                   </span>
@@ -137,7 +144,7 @@ export default function ReceiptPage() {
               {receipt.rating != null && (
                 <div className="flex items-center gap-3 py-3">
                   <Star className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground">Rating</span>
+                  <span className="text-sm text-muted-foreground">{t('rating')}</span>
                   <div className="ml-auto flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star
@@ -155,7 +162,7 @@ export default function ReceiptPage() {
               {receipt.feedbackTags && receipt.feedbackTags.length > 0 && (
                 <div className="flex items-start gap-3 py-3">
                   <span className="w-4" />
-                  <span className="text-sm text-muted-foreground">Feedback</span>
+                  <span className="text-sm text-muted-foreground">{t('feedback')}</span>
                   <div className="ml-auto flex flex-wrap justify-end gap-1">
                     {receipt.feedbackTags.map((tag) => (
                       <span
@@ -173,8 +180,10 @@ export default function ReceiptPage() {
         </Card>
 
         <p className="text-xs text-muted-foreground">
-          Tip method: {receipt.tipMethod === 'per_day' ? 'Per Day' : 'Flat'} &middot; Stay:{' '}
-          {formatDate(receipt.checkInDate)} &ndash; {formatDate(receipt.checkOutDate)}
+          {t('tipMethod')}:{' '}
+          {receipt.tipMethod === 'per_day' ? t('tipMethodPerDay') : t('tipMethodFlat')} &middot;{' '}
+          {t('stay')}: {formatDate(receipt.checkInDate, locale)} &ndash;{' '}
+          {formatDate(receipt.checkOutDate, locale)}
         </p>
       </div>
     </div>

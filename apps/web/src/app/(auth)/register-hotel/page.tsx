@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { hotelOnboardSchema, type HotelOnboardInput } from '@tipper/shared';
 import { Hotel } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import {
 
 export default function RegisterHotelPage() {
   const router = useRouter();
+  const t = useTranslations('auth');
   const [error, setError] = useState('');
 
   const form = useForm<HotelOnboardInput>({
@@ -54,9 +56,7 @@ export default function RegisterHotelPage() {
           <Link href="/" className="text-3xl font-bold tracking-tight text-primary">
             Tipper
           </Link>
-          <p className="text-sm text-muted-foreground mt-1">
-            Launch cashless tipping at your hotel
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{t('registerHotelDesc')}</p>
           <div className="mx-auto mt-3 h-px w-12 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         </div>
 
@@ -66,15 +66,13 @@ export default function RegisterHotelPage() {
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Hotel className="h-6 w-6" />
             </div>
-            <CardTitle>Register Your Hotel</CardTitle>
-            <CardDescription>
-              Create your hotel account and start receiving digital tips
-            </CardDescription>
+            <CardTitle>{t('registerHotelTitle')}</CardTitle>
+            <CardDescription>{t('registerHotelDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="hotelName">Hotel Name</Label>
+                <Label htmlFor="hotelName">{t('hotelName')}</Label>
                 <Input
                   id="hotelName"
                   {...form.register('hotelName')}
@@ -87,7 +85,7 @@ export default function RegisterHotelPage() {
                 )}
               </div>
               <div>
-                <Label htmlFor="name">Your Name</Label>
+                <Label htmlFor="name">{t('yourName')}</Label>
                 <Input id="name" {...form.register('name')} placeholder="John Smith" />
                 {form.formState.errors.name && (
                   <p className="text-sm text-destructive mt-1">
@@ -96,7 +94,7 @@ export default function RegisterHotelPage() {
                 )}
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('emailLabel')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -110,7 +108,7 @@ export default function RegisterHotelPage() {
                 )}
               </div>
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Input id="password" type="password" {...form.register('password')} />
                 {form.formState.errors.password && (
                   <p className="text-sm text-destructive mt-1">
@@ -120,15 +118,15 @@ export default function RegisterHotelPage() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating Account...' : 'Get Started'}
+                {form.formState.isSubmitting ? t('registering') : t('register')}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="justify-center">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
+              {t('hasAccount')}{' '}
               <Link href="/login" className="text-primary hover:underline">
-                Log in
+                {t('signIn')}
               </Link>
             </p>
           </CardFooter>

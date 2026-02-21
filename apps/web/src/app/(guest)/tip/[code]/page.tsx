@@ -15,6 +15,8 @@ import {
   MapPin,
   Star,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { stripePromise } from '@/lib/stripe';
 import { formatCurrency } from '@/lib/utils';
@@ -78,6 +80,8 @@ function PaymentForm({
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const t = useTranslations('guest');
+  const tc = useTranslations('common');
 
   async function handlePayment() {
     if (!stripe || !elements) return;
@@ -134,7 +138,7 @@ function PaymentForm({
         disabled={!stripe || processing}
         onClick={handlePayment}
       >
-        {processing ? 'Processing...' : 'Complete Payment'}
+        {processing ? tc('processing') : t('completePayment')}
       </Button>
     </div>
   );
@@ -143,6 +147,9 @@ function PaymentForm({
 export default function TipPage() {
   const params = useParams();
   const code = params.code as string;
+  const t = useTranslations('guest');
+  const tc = useTranslations('common');
+  const locale = useLocale();
 
   const [step, setStep] = useState<Step>('loading');
   const [error, setError] = useState('');
@@ -347,11 +354,9 @@ export default function TipPage() {
         >
           <Card className="w-full max-w-md">
             <CardContent className="pt-8 pb-8 text-center space-y-3">
-              <p className="text-lg font-semibold text-destructive">Invalid QR Code</p>
+              <p className="text-lg font-semibold text-destructive">{t('receiptInvalid')}</p>
               <p className="text-sm text-muted-foreground">{error}</p>
-              <p className="text-sm text-muted-foreground">
-                Please scan a valid QR code from your hotel room.
-              </p>
+              <p className="text-sm text-muted-foreground">{t('receiptInvalid')}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -376,23 +381,23 @@ export default function TipPage() {
               <CheckCircle2 className="h-10 w-10 text-primary" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight">Thank You!</h2>
-              <p className="mt-2 text-muted-foreground">Your generosity is appreciated</p>
+              <h2 className="text-3xl font-bold tracking-tight">{t('thankYou')}</h2>
+              <p className="mt-2 text-muted-foreground">{t('tipConfirmed')}</p>
             </div>
             <Card>
               <CardContent className="pt-6 divide-y divide-border/50">
                 <div className="flex justify-between pb-3">
-                  <span className="text-muted-foreground">Hotel</span>
+                  <span className="text-muted-foreground">{t('hotel')}</span>
                   <span className="font-medium">{confirmation.hotelName}</span>
                 </div>
                 <div className="flex justify-between py-3">
-                  <span className="text-muted-foreground">Room</span>
+                  <span className="text-muted-foreground">{t('room')}</span>
                   <span className="font-medium">{confirmation.roomNumber}</span>
                 </div>
                 <div className="flex justify-between pt-3">
-                  <span className="text-muted-foreground">Amount</span>
+                  <span className="text-muted-foreground">{t('tipAmount')}</span>
                   <span className="text-xl font-bold text-primary">
-                    {formatCurrency(confirmation.amount, confirmation.currency)}
+                    {formatCurrency(confirmation.amount, confirmation.currency, locale)}
                   </span>
                 </div>
               </CardContent>
@@ -400,7 +405,7 @@ export default function TipPage() {
             {!feedbackSubmitted ? (
               <Card>
                 <CardContent className="pt-6 space-y-4">
-                  <p className="text-sm font-medium text-center">How was the room service?</p>
+                  <p className="text-sm font-medium text-center">{t('howWasService')}</p>
                   <div className="flex justify-center gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -457,14 +462,14 @@ export default function TipPage() {
                           setFeedbackSubmitting(false);
                         }}
                       >
-                        {feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+                        {feedbackSubmitting ? t('submitting') : t('submitFeedback')}
                       </Button>
                     </>
                   )}
                 </CardContent>
               </Card>
             ) : (
-              <p className="text-sm text-primary font-medium">Thanks for your feedback!</p>
+              <p className="text-sm text-primary font-medium">{t('thanksForFeedback')}</p>
             )}
             {tipData?.receiptToken && (
               <a
@@ -474,19 +479,21 @@ export default function TipPage() {
               >
                 <Button type="button" variant="gold-outline" className="w-full">
                   <FileText className="mr-2 h-4 w-4" />
-                  View Receipt
+                  {t('viewReceipt')}
                 </Button>
               </a>
             )}
             {form.getValues('guestEmail') && (
               <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4 text-primary/70" />
-                <span>Receipt sent to {form.getValues('guestEmail')}</span>
+                <span>
+                  {t('receiptSentTo')} {form.getValues('guestEmail')}
+                </span>
               </div>
             )}
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-primary/70" />
-              <span>100% goes directly to your cleaning staff</span>
+              <span>{t('allGoesToStaff')}</span>
             </div>
           </div>
         </motion.div>
@@ -508,19 +515,19 @@ export default function TipPage() {
           <div className="mx-auto w-full max-w-md space-y-6">
             <StepIndicator currentStep={3} totalSteps={3} />
             <div className="text-center">
-              <h2 className="text-xl font-bold tracking-tight">Complete Payment</h2>
+              <h2 className="text-xl font-bold tracking-tight">{t('completePayment')}</h2>
               <p className="mt-1 text-muted-foreground">
-                {formatCurrency(tipData?.amount ?? 0, hotelInfo?.currency)} tip for{' '}
+                {formatCurrency(tipData?.amount ?? 0, hotelInfo?.currency, locale)} {t('tipFor')}{' '}
                 {hotelInfo?.hotelName}
               </p>
             </div>
             <div className="space-y-5">
               <div>
-                <Label htmlFor="guestName">Your Name (optional)</Label>
+                <Label htmlFor="guestName">{t('yourName')}</Label>
                 <Input id="guestName" {...form.register('guestName')} placeholder="John Doe" />
               </div>
               <div>
-                <Label htmlFor="guestEmail">Email for Receipt (optional)</Label>
+                <Label htmlFor="guestEmail">{t('emailReceipt')}</Label>
                 <Input
                   id="guestEmail"
                   type="email"
@@ -529,20 +536,20 @@ export default function TipPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="message">Message for Staff (optional)</Label>
+                <Label htmlFor="message">{t('messageForStaff')}</Label>
                 <Textarea
                   id="message"
                   {...form.register('message')}
-                  placeholder="Thank you for keeping our room clean!"
+                  placeholder={t('messagePlaceholder')}
                   maxLength={500}
                 />
               </div>
               <Card>
                 <CardContent className="pt-4 pb-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tip Amount</span>
+                    <span className="text-muted-foreground">{t('tipAmount')}</span>
                     <span className="text-lg font-bold text-primary">
-                      {formatCurrency(form.getValues('totalAmount'), hotelInfo?.currency)}
+                      {formatCurrency(form.getValues('totalAmount'), hotelInfo?.currency, locale)}
                     </span>
                   </div>
                 </CardContent>
@@ -579,7 +586,7 @@ export default function TipPage() {
             </Card>
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <ShieldCheck className="h-4 w-4" />
-              <span>100% goes directly to staff</span>
+              <span>{t('allGoesToStaffShort')}</span>
             </div>
             <Button
               type="button"
@@ -587,7 +594,7 @@ export default function TipPage() {
               className="w-full"
               onClick={() => setStep('amount')}
             >
-              Back
+              {tc('back')}
             </Button>
           </div>
         </motion.div>
@@ -623,13 +630,13 @@ export default function TipPage() {
                 {locationStatus === 'checking' && (
                   <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm text-blue-300">
                     <MapPin className="h-4 w-4 animate-pulse" />
-                    <span>Verifying your location...</span>
+                    <span>{t('verifyingLocation')}</span>
                   </div>
                 )}
                 {locationStatus === 'verified' && (
                   <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-300">
                     <MapPin className="h-4 w-4" />
-                    <span>Location verified</span>
+                    <span>{t('locationVerified')}</span>
                   </div>
                 )}
                 {locationStatus === 'unverified' && (
@@ -642,7 +649,7 @@ export default function TipPage() {
                 <Card>
                   <CardContent className="pt-6 space-y-4">
                     <div>
-                      <Label htmlFor="roomNumber">Room Number</Label>
+                      <Label htmlFor="roomNumber">{t('roomNumber')}</Label>
                       <Input id="roomNumber" {...form.register('roomNumber')} />
                       {form.formState.errors.roomNumber && (
                         <p className="text-sm text-destructive mt-1">
@@ -652,7 +659,7 @@ export default function TipPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="checkInDate">Check-in Date</Label>
+                      <Label htmlFor="checkInDate">{t('checkInDate')}</Label>
                       <Controller
                         control={form.control}
                         name="checkInDate"
@@ -673,7 +680,7 @@ export default function TipPage() {
                       )}
                     </div>
                     <div>
-                      <Label htmlFor="checkOutDate">Check-out Date</Label>
+                      <Label htmlFor="checkOutDate">{t('checkOutDate')}</Label>
                       <Controller
                         control={form.control}
                         name="checkOutDate"
@@ -708,7 +715,7 @@ export default function TipPage() {
                         if (valid) setStep('amount');
                       }}
                     >
-                      Confirm My Stay
+                      {t('confirmStay')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -719,17 +726,18 @@ export default function TipPage() {
             {step === 'amount' && (
               <>
                 <div className="text-center">
-                  <h2 className="text-xl font-bold tracking-tight">Choose Tip Amount</h2>
+                  <h2 className="text-xl font-bold tracking-tight">{t('chooseAmount')}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Select an amount {tipMethod === 'per_day' ? 'per day' : 'for your stay'}
+                    {t('selectAmountHint')}{' '}
+                    {tipMethod === 'per_day' ? t('perDay') : t('forYourStay')}
                   </p>
                 </div>
 
                 <div className="flex justify-center">
                   <TogglePill
                     options={[
-                      { label: 'Total Stay', value: 'flat' },
-                      { label: 'Per Day', value: 'per_day' },
+                      { label: t('totalStay'), value: 'flat' },
+                      { label: t('perDayOption'), value: 'per_day' },
                     ]}
                     value={tipMethod}
                     onChange={(v) => form.setValue('tipMethod', v as 'flat' | 'per_day')}
@@ -738,7 +746,7 @@ export default function TipPage() {
 
                 {tipMethod === 'per_day' && (
                   <p className="text-sm text-muted-foreground text-center">
-                    {numberOfDays} day{numberOfDays !== 1 ? 's' : ''} of stay
+                    {numberOfDays} {numberOfDays !== 1 ? t('daysOfStayPlural') : t('daysOfStay')}
                   </p>
                 )}
 
@@ -746,7 +754,7 @@ export default function TipPage() {
                   {hotelInfo?.suggestedAmounts.map((amt) => (
                     <AmountSelector
                       key={amt}
-                      amount={formatCurrency(amt, hotelInfo.currency)}
+                      amount={formatCurrency(amt, hotelInfo.currency, locale)}
                       selected={selectedAmount === amt}
                       onClick={() => handleAmountSelect(amt)}
                     />
@@ -754,7 +762,7 @@ export default function TipPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="customAmount">Custom Amount</Label>
+                  <Label htmlFor="customAmount">{t('customAmount')}</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                       $
@@ -781,7 +789,8 @@ export default function TipPage() {
 
                 {tipMethod === 'per_day' && selectedAmount && (
                   <p className="text-center text-lg font-semibold text-primary">
-                    Total: {formatCurrency(selectedAmount * numberOfDays, hotelInfo?.currency)}
+                    {t('totalLabel')}:{' '}
+                    {formatCurrency(selectedAmount * numberOfDays, hotelInfo?.currency, locale)}
                   </p>
                 )}
 
@@ -792,7 +801,7 @@ export default function TipPage() {
                     className="flex-1"
                     onClick={() => setStep('stayDetails')}
                   >
-                    Back
+                    {tc('back')}
                   </Button>
                   <Button
                     type="button"
@@ -802,7 +811,7 @@ export default function TipPage() {
                     disabled={!selectedAmount}
                     onClick={() => setStep('payment')}
                   >
-                    Continue
+                    {t('completePayment')}
                   </Button>
                 </div>
               </>

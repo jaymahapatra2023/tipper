@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { ClipboardList } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,6 +21,8 @@ interface Assignment {
 }
 
 export default function StaffAssignmentsPage() {
+  const t = useTranslations('staff');
+  const locale = useLocale();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +44,7 @@ export default function StaffAssignmentsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Room Assignments" description="View and claim your assigned rooms" />
+      <PageHeader title={t('assignmentsTitle')} description={t('assignmentsDesc')} />
 
       <Card>
         <CardContent className="pt-6">
@@ -49,8 +53,8 @@ export default function StaffAssignmentsPage() {
           ) : assignments.length === 0 ? (
             <EmptyState
               icon={ClipboardList}
-              title="No assignments"
-              description="You'll see room assignments here when they're available"
+              title={t('noAssignments')}
+              description={t('assignmentsHint')}
             />
           ) : (
             <div className="space-y-1">
@@ -60,17 +64,19 @@ export default function StaffAssignmentsPage() {
                   className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                 >
                   <div>
-                    <p className="font-medium">Room {a.room.roomNumber}</p>
+                    <p className="font-medium">
+                      {t('room')} {a.room.roomNumber}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      Floor {a.room.floor} - {formatDate(a.assignedDate)}
+                      Floor {a.room.floor} - {formatDate(a.assignedDate, locale)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {a.isClaimed ? (
-                      <Badge variant="success">Claimed</Badge>
+                      <Badge variant="success">{t('claimed')}</Badge>
                     ) : (
                       <Button size="sm" onClick={() => claimAssignment(a.id)}>
-                        Claim
+                        {t('claim')}
                       </Button>
                     )}
                   </div>

@@ -62,6 +62,7 @@ model User {
   mfaSecret        String?   @map("mfa_secret")
   mfaRecoveryCodes String[]  @map("mfa_recovery_codes")
   mfaSetupAt       DateTime? @map("mfa_setup_at")
+  preferredLocale  String?   @map("preferred_locale")
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
@@ -129,6 +130,7 @@ model Hotel {
   feedbackTags           String[]    @default([]) @map("feedback_tags")
   leaderboardEnabled     Boolean     @default(false) @map("leaderboard_enabled")
   leaderboardAnonymized  Boolean     @default(false) @map("leaderboard_anonymized")
+  defaultGuestLocale     String      @default("en") @map("default_guest_locale")
   createdAt              DateTime    @default(now()) @map("created_at")
   updatedAt              DateTime    @updatedAt @map("updated_at")
 

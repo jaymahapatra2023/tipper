@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -26,6 +27,8 @@ export default function StaffSettingsPage() {
 
 function StaffSettingsContent() {
   const { user } = useAuth();
+  const t = useTranslations('staff');
+  const tc = useTranslations('common');
   const searchParams = useSearchParams();
   const [poolOptIn, setPoolOptIn] = useState(false);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
@@ -73,7 +76,7 @@ function StaffSettingsContent() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Settings" description="Manage your profile and payout preferences" />
+      <PageHeader title={t('settingsTitle')} description={t('settingsDesc')} />
 
       <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
@@ -82,10 +85,10 @@ function StaffSettingsContent() {
         </CardHeader>
         <CardContent className="space-y-2">
           <p>
-            <span className="text-muted-foreground">Name:</span> {user?.name}
+            <span className="text-muted-foreground">{tc('name')}:</span> {user?.name}
           </p>
           <p>
-            <span className="text-muted-foreground">Email:</span> {user?.email}
+            <span className="text-muted-foreground">{tc('email')}:</span> {user?.email}
           </p>
         </CardContent>
       </Card>
@@ -95,16 +98,16 @@ function StaffSettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5" />
-            Two-Factor Authentication
+            {t('twoFactorAuth')}
           </CardTitle>
-          <CardDescription>Add an extra layer of security to your account</CardDescription>
+          <CardDescription>{t('twoFactorDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span>Status:</span>
+              <span>{tc('status')}:</span>
               <Badge variant={mfaEnabled ? 'success' : 'secondary'}>
-                {mfaEnabled ? 'Enabled' : 'Disabled'}
+                {mfaEnabled ? tc('enabled') : tc('disabled')}
               </Badge>
             </div>
             {mfaEnabled ? (
@@ -112,19 +115,14 @@ function StaffSettingsContent() {
                 variant="outline"
                 disabled={mfaLoading}
                 onClick={async () => {
-                  if (
-                    !confirm(
-                      'This will disable two-factor authentication on your account. Continue?',
-                    )
-                  )
-                    return;
+                  if (!confirm(t('disableMfaConfirm'))) return;
                   setMfaLoading(true);
                   const res = await api.post('/auth/mfa/disable');
                   if (res.success) setMfaEnabled(false);
                   setMfaLoading(false);
                 }}
               >
-                {mfaLoading ? 'Disabling...' : 'Disable MFA'}
+                {mfaLoading ? tc('saving') : 'Disable MFA'}
               </Button>
             ) : (
               <Button onClick={() => router.push('/mfa-setup')}>Set Up MFA</Button>
@@ -136,16 +134,14 @@ function StaffSettingsContent() {
       <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle>Tip Pooling</CardTitle>
-          <CardDescription>
-            When enabled, tips for the hotel are shared among all opted-in staff members
-          </CardDescription>
+          <CardTitle>{t('tipPoolingTitle')}</CardTitle>
+          <CardDescription>{t('tipPoolingDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <span>Participate in tip pooling</span>
+            <span>{t('participatePooling')}</span>
             <Button variant={poolOptIn ? 'default' : 'outline'} onClick={togglePoolOptIn}>
-              {poolOptIn ? 'Opted In' : 'Opt In'}
+              {poolOptIn ? t('optedIn') : t('optIn')}
             </Button>
           </div>
         </CardContent>
@@ -154,8 +150,8 @@ function StaffSettingsContent() {
       <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle>Bank Account</CardTitle>
-          <CardDescription>Connect your bank account to receive payouts</CardDescription>
+          <CardTitle>{t('bankAccount')}</CardTitle>
+          <CardDescription>{t('bankAccountDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {stripeStatus?.stripeOnboarded ? (
@@ -164,24 +160,20 @@ function StaffSettingsContent() {
                 ✓
               </div>
               <div>
-                <p className="font-medium">Stripe account connected</p>
-                <p className="text-sm text-muted-foreground">
-                  Your payout account is set up and ready to receive tips.
-                </p>
+                <p className="font-medium">{t('stripeConnected')}</p>
+                <p className="text-sm text-muted-foreground">{t('stripeReadyDesc')}</p>
               </div>
             </div>
           ) : stripeStatus?.stripeAccountId ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Your Stripe account has been created but setup is not complete.
-              </p>
+              <p className="text-sm text-muted-foreground">{t('stripeIncomplete')}</p>
               <Button onClick={startStripeOnboarding} disabled={stripeLoading}>
-                {stripeLoading ? 'Redirecting...' : 'Complete Stripe Setup'}
+                {stripeLoading ? tc('loading') : t('completeStripeSetup')}
               </Button>
             </div>
           ) : (
             <Button onClick={startStripeOnboarding} disabled={stripeLoading}>
-              {stripeLoading ? 'Redirecting...' : 'Set Up Payouts with Stripe'}
+              {stripeLoading ? tc('loading') : t('setupPayoutsStripe')}
             </Button>
           )}
         </CardContent>

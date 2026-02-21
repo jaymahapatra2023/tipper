@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,14 +23,21 @@ interface OnboardingStatus {
   qrGenerated: number;
 }
 
-const STEP_LABELS = ['Hotel Profile', 'Rooms', 'Staff', 'Stripe', 'QR Codes'];
-
 function OnboardingContent() {
+  const t = useTranslations('admin');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const STEP_LABELS = [
+    t('stepHotelProfile'),
+    t('stepRooms'),
+    t('stepStaff'),
+    t('stepStripe'),
+    t('stepQrCodes'),
+  ];
 
   useEffect(() => {
     api.get<OnboardingStatus>('/admin/onboarding/status').then((res) => {
@@ -65,7 +73,7 @@ function OnboardingContent() {
     await advanceStep();
   }
 
-  if (loading) return <LoadingSpinner message="Loading setup wizard..." />;
+  if (loading) return <LoadingSpinner message={t('loadingSetup')} />;
 
   if (currentStep >= 5) {
     router.push('/admin-dashboard');
@@ -75,10 +83,8 @@ function OnboardingContent() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Set Up Your Hotel</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Complete these steps to start accepting tips
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight">{t('onboardingTitle')}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{t('onboardingDesc')}</p>
       </div>
 
       <StepIndicator currentStep={currentStep} totalSteps={5} labels={STEP_LABELS} />
@@ -104,7 +110,7 @@ function OnboardingContent() {
 
       <div className="text-center">
         <Button variant="ghost" onClick={() => router.push('/admin-dashboard')}>
-          Go to Dashboard
+          {t('dashboardTitle')}
         </Button>
       </div>
     </div>
@@ -112,8 +118,9 @@ function OnboardingContent() {
 }
 
 export default function AdminOnboardingPage() {
+  const t = useTranslations('admin');
   return (
-    <Suspense fallback={<LoadingSpinner message="Loading setup wizard..." />}>
+    <Suspense fallback={<LoadingSpinner message={t('loadingSetup')} />}>
       <OnboardingContent />
     </Suspense>
   );

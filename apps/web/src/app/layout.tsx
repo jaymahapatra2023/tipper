@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 import { Outfit, Sora } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import { AuthProvider } from '@/hooks/use-auth';
 import { AssistantWrapper } from '@/components/shared/assistant-wrapper';
 import './globals.css';
@@ -12,14 +14,19 @@ export const metadata: Metadata = {
   description: 'Show appreciation for hotel cleaning staff with easy digital tips',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en" className={`${outfit.variable} ${sora.variable}`}>
+    <html lang={locale} className={`${outfit.variable} ${sora.variable}`}>
       <body className="min-h-screen bg-background antialiased">
-        <AuthProvider>
-          {children}
-          <AssistantWrapper />
-        </AuthProvider>
+        <NextIntlClientProvider messages={messages}>
+          <AuthProvider>
+            {children}
+            <AssistantWrapper />
+          </AuthProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

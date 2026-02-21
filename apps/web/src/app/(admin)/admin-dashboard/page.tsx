@@ -14,6 +14,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,9 +44,10 @@ interface HotelInfo {
 }
 
 function DashboardSkeleton() {
+  const t = useTranslations('admin');
   return (
     <div className="space-y-8">
-      <PageHeader title="Hotel Dashboard" description="Overview of your hotel's tipping activity" />
+      <PageHeader title={t('dashboardTitle')} description={t('dashboardDesc')} />
       <div className="grid gap-4 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
@@ -97,12 +100,18 @@ function MiniTooltip({
   payload?: { value: number; payload: { count: number } }[];
   label?: string;
 }) {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border bg-background p-2 shadow-md text-xs">
       <p className="font-medium">{label}</p>
-      <p className="text-muted-foreground">{payload[0].payload.count} tips</p>
-      <p className="font-semibold text-emerald-600">{formatCurrency(payload[0].value)}</p>
+      <p className="text-muted-foreground">
+        {payload[0].payload.count} {t('tips')}
+      </p>
+      <p className="font-semibold text-emerald-600">
+        {formatCurrency(payload[0].value, 'usd', locale)}
+      </p>
     </div>
   );
 }
@@ -114,13 +123,19 @@ function RoomBarTooltip({
   active?: boolean;
   payload?: { value: number; payload: { roomNumber: string; count: number } }[];
 }) {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
     <div className="rounded-lg border bg-background p-2 shadow-md text-xs">
-      <p className="font-medium">Room {d.roomNumber}</p>
-      <p className="text-muted-foreground">{d.count} tips</p>
-      <p className="font-semibold text-emerald-600">{formatCurrency(payload[0].value)}</p>
+      <p className="font-medium">{d.roomNumber}</p>
+      <p className="text-muted-foreground">
+        {d.count} {t('tips')}
+      </p>
+      <p className="font-semibold text-emerald-600">
+        {formatCurrency(payload[0].value, 'usd', locale)}
+      </p>
     </div>
   );
 }
@@ -132,18 +147,26 @@ function StaffBarTooltip({
   active?: boolean;
   payload?: { value: number; payload: { staffName: string; count: number } }[];
 }) {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
     <div className="rounded-lg border bg-background p-2 shadow-md text-xs">
       <p className="font-medium">{d.staffName}</p>
-      <p className="text-muted-foreground">{d.count} tips</p>
-      <p className="font-semibold text-emerald-600">{formatCurrency(payload[0].value)}</p>
+      <p className="text-muted-foreground">
+        {d.count} {t('tips')}
+      </p>
+      <p className="font-semibold text-emerald-600">
+        {formatCurrency(payload[0].value, 'usd', locale)}
+      </p>
     </div>
   );
 }
 
 export default function AdminDashboardPage() {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
   const [hotel, setHotel] = useState<HotelInfo | null>(null);
   const [staffCount, setStaffCount] = useState<number | null>(null);
@@ -185,7 +208,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Hotel Dashboard" description="Overview of your hotel's tipping activity" />
+      <PageHeader title={t('dashboardTitle')} description={t('dashboardDesc')} />
 
       {showSetupBanner && (
         <Link href="/admin-onboarding">
@@ -193,9 +216,9 @@ export default function AdminDashboardPage() {
             <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
             <CardContent className="flex items-center justify-between py-4">
               <div>
-                <p className="font-medium">Continue Setting Up Your Hotel</p>
+                <p className="font-medium">{t('continueSetup')}</p>
                 <p className="text-sm text-muted-foreground">
-                  Step {(hotel?.onboardingStep ?? 0) + 1} of 5 — pick up where you left off
+                  {t('setupStep', { current: (hotel?.onboardingStep ?? 0) + 1, total: 5 })}
                 </p>
               </div>
               <ArrowRight className="h-5 w-5 text-primary shrink-0" />
@@ -207,7 +230,9 @@ export default function AdminDashboardPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Tips</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('totalTips')}
+            </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <Receipt className="h-4 w-4" />
             </div>
@@ -219,7 +244,7 @@ export default function AdminDashboardPage() {
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Amount
+              {t('totalAmount')}
             </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
               <DollarSign className="h-4 w-4" />
@@ -227,27 +252,29 @@ export default function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(analytics?.totalAmount || 0)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Average Tip</CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(analytics?.averageTip || 0)}
+              {formatCurrency(analytics?.totalAmount || 0, 'usd', locale)}
             </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Rooms with Tips
+              {t('averageTip')}
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(analytics?.averageTip || 0, 'usd', locale)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('roomsWithTips')}
             </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
               <DoorOpen className="h-4 w-4" />
@@ -265,9 +292,9 @@ export default function AdminDashboardPage() {
       {dateData.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Revenue Trend</CardTitle>
+            <CardTitle>{t('revenueTrend')}</CardTitle>
             <Link href="/admin-analytics" className="text-sm text-primary hover:underline">
-              View Analytics
+              {t('viewAnalytics')}
             </Link>
           </CardHeader>
           <CardContent>
@@ -305,7 +332,7 @@ export default function AdminDashboardPage() {
       <div className="grid gap-8 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Tips by Room</CardTitle>
+            <CardTitle>{t('tipsByRoom')}</CardTitle>
           </CardHeader>
           <CardContent>
             {topRooms.length > 0 ? (
@@ -330,8 +357,8 @@ export default function AdminDashboardPage() {
             ) : (
               <EmptyState
                 icon={DoorOpen}
-                title="No room data yet"
-                description="Tips will appear here once guests start tipping"
+                title={t('noRoomDataYet')}
+                description={t('tipsWillAppear')}
               />
             )}
           </CardContent>
@@ -339,7 +366,7 @@ export default function AdminDashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Tips by Staff</CardTitle>
+            <CardTitle>{t('tipsByStaff')}</CardTitle>
           </CardHeader>
           <CardContent>
             {staffData.length > 0 ? (
@@ -366,8 +393,8 @@ export default function AdminDashboardPage() {
             ) : (
               <EmptyState
                 icon={TrendingUp}
-                title="No staff data yet"
-                description="Staff tip totals will appear here"
+                title={t('noStaffDataYet')}
+                description={t('staffTipTotals')}
               />
             )}
           </CardContent>

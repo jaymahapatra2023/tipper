@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,8 @@ interface PlatformSettings {
 }
 
 export default function PlatformSettingsPage() {
+  const t = useTranslations('platform');
+  const tc = useTranslations('common');
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,17 +42,17 @@ export default function PlatformSettingsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Platform Settings" description="Configure platform-wide settings" />
+      <PageHeader title={t('settingsTitle')} description={t('settingsDesc')} />
 
       <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle>Fee Configuration</CardTitle>
-          <CardDescription>Set the default platform fee percentage for all hotels</CardDescription>
+          <CardTitle>{t('defaultFeePercent')}</CardTitle>
+          <CardDescription>{t('feeDescription')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Default Platform Fee (%)</Label>
+            <Label>{t('defaultFeePercent')} (%)</Label>
             <Input
               type="number"
               min="0"
@@ -65,12 +68,10 @@ export default function PlatformSettingsPage() {
               }
               className="w-32"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              This fee is deducted from each tip before distributing to hotel/staff
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">{t('feeDescription')}</p>
           </div>
           <Button onClick={saveSettings} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? tc('saving') : t('saveSettingsBtn')}
           </Button>
         </CardContent>
       </Card>

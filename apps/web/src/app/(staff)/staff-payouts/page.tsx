@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Wallet } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +22,9 @@ interface Payout {
 }
 
 export default function StaffPayoutsPage() {
+  const t = useTranslations('staff');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,19 +38,19 @@ export default function StaffPayoutsPage() {
   const statusBadge = (status: string) => {
     switch (status) {
       case 'completed':
-        return <Badge variant="success">Completed</Badge>;
+        return <Badge variant="success">{tc('completed')}</Badge>;
       case 'processing':
-        return <Badge variant="warning">Processing</Badge>;
+        return <Badge variant="warning">{tc('processing')}</Badge>;
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>;
+        return <Badge variant="destructive">{tc('failed')}</Badge>;
       default:
-        return <Badge variant="secondary">Pending</Badge>;
+        return <Badge variant="secondary">{tc('pending')}</Badge>;
     }
   };
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Payouts" description="Track your payout history and status" />
+      <PageHeader title={t('payoutsTitle')} description={t('payoutsDesc')} />
 
       <Card>
         <CardContent className="pt-6">
@@ -54,8 +59,8 @@ export default function StaffPayoutsPage() {
           ) : payouts.length === 0 ? (
             <EmptyState
               icon={Wallet}
-              title="No payouts yet"
-              description="Your payout history will appear here"
+              title={t('noPayoutsYet')}
+              description={t('payoutHistoryAppear')}
             />
           ) : (
             <div className="space-y-1">
@@ -65,8 +70,10 @@ export default function StaffPayoutsPage() {
                   className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                 >
                   <div>
-                    <p className="font-medium">{formatCurrency(p.amount, p.currency)}</p>
-                    <p className="text-sm text-muted-foreground">{formatDate(p.createdAt)}</p>
+                    <p className="font-medium">{formatCurrency(p.amount, p.currency, locale)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(p.createdAt, locale)}
+                    </p>
                   </div>
                   {statusBadge(p.status)}
                 </div>

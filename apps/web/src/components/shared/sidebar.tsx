@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/shared/notification-bell';
+import { LanguageSelector } from '@/components/shared/language-selector';
 
 interface NavItem {
   label: string;
@@ -32,6 +34,7 @@ function getInitials(name?: string) {
 export function Sidebar({ items, title, children }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const t = useTranslations('common');
 
   const hasBranding = !!(user?.hotel?.primaryColor || user?.hotel?.secondaryColor);
   const accentColor = user?.hotel?.primaryColor;
@@ -127,7 +130,10 @@ export function Sidebar({ items, title, children }: SidebarProps) {
         </nav>
 
         <div className={cn('border-t p-4', hasBranding ? 'border-white/10' : '')}>
-          <div className="flex items-center gap-3">
+          <LanguageSelector
+            className={cn(hasBranding && '[&_button]:text-white/70 [&_button]:hover:text-white')}
+          />
+          <div className="mt-3 flex items-center gap-3">
             <div
               className={cn(
                 'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-medium ring-1',
@@ -161,7 +167,7 @@ export function Sidebar({ items, title, children }: SidebarProps) {
             )}
             onClick={logout}
           >
-            Log Out
+            {t('logOut')}
           </Button>
         </div>
       </aside>

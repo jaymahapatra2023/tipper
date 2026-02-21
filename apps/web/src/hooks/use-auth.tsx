@@ -18,6 +18,7 @@ interface User {
   email: string;
   name: string;
   role: UserRole;
+  preferredLocale?: string | null;
   hotel?: HotelBranding | null;
 }
 
@@ -53,6 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await api.get<User>('/auth/me');
     if (res.success && res.data) {
       setUser(res.data);
+      // Set locale cookie from user preference if available
+      if (res.data.preferredLocale) {
+        document.cookie = `NEXT_LOCALE=${res.data.preferredLocale};path=/;max-age=${60 * 60 * 24 * 365};samesite=lax`;
+      }
       return res.data;
     }
     throw new Error('Failed to fetch profile');

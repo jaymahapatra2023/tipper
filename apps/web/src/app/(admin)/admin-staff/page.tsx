@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Users, Weight } from 'lucide-react';
 import { staffCreateSchema, type StaffCreateInput, POOL_WEIGHT_PRESETS } from '@tipper/shared';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,8 @@ interface HotelInfo {
 }
 
 export default function AdminStaffPage() {
+  const t = useTranslations('admin');
+  const tc = useTranslations('common');
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [hotel, setHotel] = useState<HotelInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,16 +84,11 @@ export default function AdminStaffPage() {
   }
 
   async function resetPassword(userId: string) {
-    if (
-      !confirm(
-        'This will generate a temporary password and send it to the staff member via email. Continue?',
-      )
-    )
-      return;
+    if (!confirm(t('resetPasswordConfirm'))) return;
     setResettingPassword(userId);
     const res = await api.post(`/admin/staff/${userId}/reset-password`);
     if (res.success) {
-      alert('Password reset email sent successfully.');
+      alert(t('passwordResetSent'));
     }
     setResettingPassword(null);
   }
@@ -102,29 +100,31 @@ export default function AdminStaffPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Staff Management" description="Manage your hotel's cleaning staff">
-        <Button onClick={() => setShowForm(!showForm)}>{showForm ? 'Cancel' : 'Add Staff'}</Button>
+      <PageHeader title={t('staffTitle')} description={t('staffDesc')}>
+        <Button onClick={() => setShowForm(!showForm)}>
+          {showForm ? tc('cancel') : t('addStaff')}
+        </Button>
       </PageHeader>
 
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>Add Staff Member</CardTitle>
+            <CardTitle>{t('addStaffMember')}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">{tc('name')}</Label>
                   <Input id="name" {...form.register('name')} />
                 </div>
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{tc('email')}</Label>
                   <Input id="email" type="email" {...form.register('email')} />
                 </div>
               </div>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Adding...' : 'Add Staff Member'}
+                {form.formState.isSubmitting ? t('adding') : t('addStaffMember')}
               </Button>
             </form>
           </CardContent>
@@ -136,12 +136,8 @@ export default function AdminStaffPage() {
           {loading ? (
             <LoadingSpinner />
           ) : staff.length === 0 ? (
-            <EmptyState
-              icon={Users}
-              title="No staff members"
-              description="Add your first staff member to get started"
-            >
-              <Button onClick={() => setShowForm(true)}>Add Staff</Button>
+            <EmptyState icon={Users} title={t('noStaffMembers')} description={t('addFirstStaff')}>
+              <Button onClick={() => setShowForm(true)}>{t('addStaff')}</Button>
             </EmptyState>
           ) : (
             <div className="space-y-1">
@@ -184,7 +180,7 @@ export default function AdminStaffPage() {
                             className="h-7"
                             onClick={() => updateWeight(s.id, weightValue)}
                           >
-                            Save
+                            {tc('save')}
                           </Button>
                           <Button
                             variant="ghost"
@@ -192,7 +188,7 @@ export default function AdminStaffPage() {
                             className="h-7"
                             onClick={() => setEditingWeight(null)}
                           >
-                            Cancel
+                            {tc('cancel')}
                           </Button>
                         </div>
                       ) : (
@@ -209,7 +205,7 @@ export default function AdminStaffPage() {
                         </Badge>
                       ))}
                     <Badge variant={s.isActive ? 'success' : 'secondary'}>
-                      {s.isActive ? 'Active' : 'Inactive'}
+                      {s.isActive ? tc('active') : tc('inactive')}
                     </Badge>
                     {s.isActive && (
                       <>
@@ -219,10 +215,10 @@ export default function AdminStaffPage() {
                           onClick={() => resetPassword(s.user.id)}
                           disabled={resettingPassword === s.user.id}
                         >
-                          {resettingPassword === s.user.id ? 'Resetting...' : 'Reset Password'}
+                          {resettingPassword === s.user.id ? t('resettingPw') : t('resetPassword')}
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => deactivateStaff(s.id)}>
-                          Deactivate
+                          {t('deactivate')}
                         </Button>
                       </>
                     )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, DollarSign, AlertCircle, Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
 import { api } from '@/lib/api';
@@ -35,6 +36,7 @@ function NotificationIcon({ type }: { type: string }) {
 
 export function NotificationBell() {
   const { user } = useAuth();
+  const t = useTranslations('common');
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -106,7 +108,7 @@ export function NotificationBell() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
-        aria-label="Notifications"
+        aria-label={t('notifications')}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
@@ -119,23 +121,25 @@ export function NotificationBell() {
       {isOpen && (
         <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border/60 bg-card shadow-lg">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-            <h3 className="text-sm font-semibold">Notifications</h3>
+            <h3 className="text-sm font-semibold">{t('notifications')}</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
                 className="text-xs font-medium text-primary hover:text-primary/80"
               >
-                Mark all read
+                {t('markAllRead')}
               </button>
             )}
           </div>
 
           <div className="max-h-80 overflow-y-auto">
             {isLoading && notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-muted-foreground">Loading...</div>
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                {t('loading')}
+              </div>
             ) : notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-                No notifications yet
+                {t('noNotificationsYet')}
               </div>
             ) : (
               notifications.map((n) => (

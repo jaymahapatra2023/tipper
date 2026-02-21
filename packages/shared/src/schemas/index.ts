@@ -101,6 +101,7 @@ export const hotelSettingsSchema = z.object({
   feedbackTags: z.array(z.string().min(1).max(50)).max(10).optional(),
   leaderboardEnabled: z.boolean().optional(),
   leaderboardAnonymized: z.boolean().optional(),
+  defaultGuestLocale: z.enum(['en', 'es', 'fr']).optional(),
 });
 
 export const tipFeedbackSchema = z.object({

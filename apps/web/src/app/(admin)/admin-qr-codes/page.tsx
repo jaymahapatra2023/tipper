@@ -13,6 +13,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,8 @@ interface HotelData {
 type QrStyleOption = 'square' | 'rounded' | 'dots';
 
 export default function AdminQrCodesPage() {
+  const t = useTranslations('admin');
+  const tc = useTranslations('common');
   const [rooms, setRooms] = useState<RoomWithQr[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
@@ -149,6 +152,12 @@ export default function AdminQrCodesPage() {
     }
   }
 
+  const styleLabels: Record<QrStyleOption, string> = {
+    square: t('square'),
+    rounded: t('rounded'),
+    dots: t('dots'),
+  };
+
   // Determine CSS class for QR style preview
   const qrStyleClass =
     qrStyle === 'dots'
@@ -159,11 +168,11 @@ export default function AdminQrCodesPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="QR Codes" description="Manage QR codes for each room">
+      <PageHeader title={t('qrTitle')} description={t('qrDesc')}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" disabled={downloading || regenerating}>
-              {downloading ? 'Downloading...' : regenerating ? 'Regenerating...' : 'Bulk Actions'}
+              {downloading ? tc('loading') : regenerating ? tc('loading') : 'Bulk Actions'}
               <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -192,7 +201,7 @@ export default function AdminQrCodesPage() {
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <Palette className="h-5 w-5" />
-              Customize QR Code
+              {t('customization')}
             </span>
             {customizerOpen ? (
               <ChevronUp className="h-5 w-5 text-muted-foreground" />
@@ -209,7 +218,7 @@ export default function AdminQrCodesPage() {
                 {/* Colors */}
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <Label className="mb-2 block">Foreground Color</Label>
+                    <Label className="mb-2 block">{t('foregroundColor')}</Label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -236,7 +245,7 @@ export default function AdminQrCodesPage() {
                     </div>
                   </div>
                   <div>
-                    <Label className="mb-2 block">Background Color</Label>
+                    <Label className="mb-2 block">{t('backgroundColor')}</Label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -266,19 +275,19 @@ export default function AdminQrCodesPage() {
 
                 {/* Style selector */}
                 <div>
-                  <Label className="mb-2 block">Style</Label>
+                  <Label className="mb-2 block">{t('style')}</Label>
                   <div className="flex gap-2">
                     {(['square', 'rounded', 'dots'] as QrStyleOption[]).map((style) => (
                       <button
                         key={style}
                         onClick={() => setQrStyle(style)}
-                        className={`rounded-lg border px-4 py-2 text-sm font-medium capitalize transition-colors ${
+                        className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                           qrStyle === style
                             ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border hover:bg-muted'
                         }`}
                       >
-                        {style}
+                        {styleLabels[style]}
                       </button>
                     ))}
                   </div>
@@ -286,7 +295,7 @@ export default function AdminQrCodesPage() {
 
                 {/* Logo overlay toggle */}
                 <div>
-                  <Label className="mb-2 block">Logo Overlay</Label>
+                  <Label className="mb-2 block">{t('embedLogo')}</Label>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setLogoEnabled(!logoEnabled)}
@@ -300,7 +309,7 @@ export default function AdminQrCodesPage() {
                         }`}
                       />
                     </button>
-                    <span className="text-sm">Embed hotel logo in QR center</span>
+                    <span className="text-sm">{t('embedLogo')}</span>
                   </div>
                   {logoEnabled && !logoUrl && (
                     <p className="mt-2 text-sm text-amber-600">
@@ -320,7 +329,7 @@ export default function AdminQrCodesPage() {
                 <div className="flex items-center gap-3">
                   <Button onClick={saveQrSettings} disabled={saving}>
                     <Save className="mr-2 h-4 w-4" />
-                    {saving ? 'Saving...' : 'Save QR Settings'}
+                    {saving ? tc('saving') : tc('save')}
                   </Button>
                   {saveMessage && (
                     <span
@@ -338,7 +347,7 @@ export default function AdminQrCodesPage() {
 
               {/* Live Preview */}
               <div className="flex flex-col items-center gap-3">
-                <Label className="text-sm font-medium">Preview</Label>
+                <Label className="text-sm font-medium">{t('preview')}</Label>
                 <div
                   className="rounded-xl border border-border p-4"
                   style={{ backgroundColor: bgColor }}
@@ -375,11 +384,7 @@ export default function AdminQrCodesPage() {
           {loading ? (
             <LoadingSpinner />
           ) : rooms.length === 0 ? (
-            <EmptyState
-              icon={QrCode}
-              title="No rooms yet"
-              description="Add rooms first, then generate QR codes"
-            />
+            <EmptyState icon={QrCode} title={t('noRoomsForQr')} description={t('addRoomsFirst')} />
           ) : (
             <div className="space-y-1">
               {rooms.map((room) => (
@@ -388,8 +393,10 @@ export default function AdminQrCodesPage() {
                   className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                 >
                   <div>
-                    <p className="font-medium">Room {room.roomNumber}</p>
-                    <p className="text-sm text-muted-foreground">Floor {room.floor}</p>
+                    <p className="font-medium">{room.roomNumber}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t('floor')} {room.floor}
+                    </p>
                     {room.qrCodes[0] && (
                       <p className="text-xs text-muted-foreground">
                         Code: {room.qrCodes[0].code} | Scans: {room.qrCodes[0].scanCount}
@@ -398,10 +405,10 @@ export default function AdminQrCodesPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant={room.qrCodes.length > 0 ? 'success' : 'secondary'}>
-                      {room.qrCodes.length > 0 ? 'Active' : 'None'}
+                      {room.qrCodes.length > 0 ? tc('active') : 'None'}
                     </Badge>
                     <Button size="sm" variant="outline" onClick={() => regenerateQr(room.id)}>
-                      {room.qrCodes.length > 0 ? 'Regenerate' : 'Generate'}
+                      {room.qrCodes.length > 0 ? t('regenerate') : t('generate')}
                     </Button>
                   </div>
                 </div>

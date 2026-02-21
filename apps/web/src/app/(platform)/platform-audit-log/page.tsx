@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Shield, Download, Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -50,6 +52,9 @@ function truncateId(id: string | null): string {
 }
 
 export default function PlatformAuditLogPage() {
+  const t = useTranslations('platform');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -126,27 +131,27 @@ export default function PlatformAuditLogPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Audit Log" description="Review all platform activity across hotels" />
+      <PageHeader title={t('auditTitle')} description={t('auditDesc')} />
 
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
-              <Label>Start Date</Label>
+              <Label>{tc('startDate')}</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div>
-              <Label>End Date</Label>
+              <Label>{tc('endDate')}</Label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
             <div>
-              <Label>Action</Label>
+              <Label>{tc('action')}</Label>
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={action}
                 onChange={(e) => setAction(e.target.value)}
               >
-                <option value="">All Actions</option>
+                <option value="">{tc('allActions')}</option>
                 {filterOptions.actions.map((a) => (
                   <option key={a} value={a}>
                     {formatAction(a)}
@@ -155,21 +160,21 @@ export default function PlatformAuditLogPage() {
               </select>
             </div>
             <div>
-              <Label>Search</Label>
+              <Label>{tc('search')}</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Search..."
+                  placeholder={tc('search') + '...'}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
             </div>
-            <Button onClick={applyFilters}>Apply</Button>
+            <Button onClick={applyFilters}>{tc('search')}</Button>
             <Button variant="outline" disabled={exporting} onClick={downloadExport}>
               <Download className="mr-2 h-4 w-4" />
-              {exporting ? 'Exporting...' : 'Export CSV'}
+              {exporting ? tc('exporting') : tc('exportCsv')}
             </Button>
           </div>
         </CardContent>
@@ -180,11 +185,7 @@ export default function PlatformAuditLogPage() {
           {loading ? (
             <LoadingSpinner />
           ) : logs.length === 0 ? (
-            <EmptyState
-              icon={Shield}
-              title="No audit log entries"
-              description="Activity will be recorded here as actions are performed"
-            />
+            <EmptyState icon={Shield} title={t('auditTitle')} description={t('auditDesc')} />
           ) : (
             <>
               <div className="space-y-1">
@@ -204,7 +205,7 @@ export default function PlatformAuditLogPage() {
                         </span>
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                        <span>{formatDate(log.createdAt)}</span>
+                        <span>{formatDate(log.createdAt, locale)}</span>
                         <span>{log.user?.name || 'System'}</span>
                         {log.user?.email && <span className="text-xs">{log.user.email}</span>}
                         {log.ipAddress && (
@@ -217,7 +218,7 @@ export default function PlatformAuditLogPage() {
               </div>
               <div className="flex justify-between items-center mt-6">
                 <p className="text-sm text-muted-foreground">
-                  Showing {(page - 1) * limit + 1}-{Math.min(page * limit, total)} of {total}
+                  {tc('showing')} {(page - 1) * limit + 1}-{Math.min(page * limit, total)} / {total}
                 </p>
                 <div className="flex gap-2">
                   <Button
@@ -226,7 +227,7 @@ export default function PlatformAuditLogPage() {
                     disabled={page === 1}
                     onClick={() => setPage((p) => p - 1)}
                   >
-                    Previous
+                    {tc('back')}
                   </Button>
                   <Button
                     variant="outline"
@@ -234,7 +235,7 @@ export default function PlatformAuditLogPage() {
                     disabled={page * limit >= total}
                     onClick={() => setPage((p) => p + 1)}
                   >
-                    Next
+                    {tc('action')}
                   </Button>
                 </div>
               </div>

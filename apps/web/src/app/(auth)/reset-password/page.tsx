@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resetPasswordSchema } from '@tipper/shared';
 import { CheckCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
+  const t = useTranslations('auth');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -66,7 +68,7 @@ function ResetPasswordContent() {
               href="/forgot-password"
               className="text-primary hover:underline text-sm mt-2 block"
             >
-              Request a new reset link
+              {t('sendResetLink')}
             </Link>
           </CardContent>
         </Card>
@@ -87,9 +89,9 @@ function ResetPasswordContent() {
         <Card className="overflow-hidden shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
           <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="text-center">
-            <CardTitle>{success ? 'Password Reset' : 'Set New Password'}</CardTitle>
+            <CardTitle>{success ? t('passwordResetSuccess') : t('resetPasswordTitle')}</CardTitle>
             <CardDescription>
-              {success ? 'Your password has been updated' : 'Choose a strong new password'}
+              {success ? t('passwordResetSuccess') : t('resetPasswordDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -98,13 +100,13 @@ function ResetPasswordContent() {
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600">
                   <CheckCircle className="h-7 w-7" />
                 </div>
-                <p className="text-sm text-muted-foreground">Redirecting to login...</p>
+                <p className="text-sm text-muted-foreground">{t('backToLogin')}...</p>
               </div>
             ) : (
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <input type="hidden" {...form.register('token')} />
                 <div>
-                  <Label htmlFor="password">New Password</Label>
+                  <Label htmlFor="password">{t('newPassword')}</Label>
                   <Input id="password" type="password" {...form.register('password')} />
                   {form.formState.errors.password && (
                     <p className="text-sm text-destructive mt-1">
@@ -114,14 +116,14 @@ function ResetPasswordContent() {
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Resetting...' : 'Reset Password'}
+                  {form.formState.isSubmitting ? t('resetting') : t('resetPassword')}
                 </Button>
               </form>
             )}
           </CardContent>
           <CardFooter className="justify-center">
             <Link href="/login" className="text-sm text-primary hover:underline">
-              Back to Login
+              {t('backToLogin')}
             </Link>
           </CardFooter>
         </Card>

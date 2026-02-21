@@ -15,6 +15,8 @@ import {
   Weight,
 } from 'lucide-react';
 import type { PoolDistributionPreview } from '@tipper/shared';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -61,6 +63,9 @@ export default function AdminSettingsPage() {
 }
 
 function AdminSettingsContent() {
+  const t = useTranslations('admin');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [hotel, setHotel] = useState<HotelData | null>(null);
@@ -186,17 +191,17 @@ function AdminSettingsContent() {
   }
 
   if (loading) return <LoadingSpinner />;
-  if (!hotel) return <div>Failed to load hotel settings</div>;
+  if (!hotel) return <div>{tc('failedToLoad')}</div>;
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Hotel Settings" description="Configure your hotel's tipping preferences" />
+      <PageHeader title={t('settingsTitle')} description={t('settingsDesc')} />
 
       <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle>Stripe Connect</CardTitle>
-          <CardDescription>Connect your Stripe account to receive tip payments</CardDescription>
+          <CardTitle>{t('stripeConnect')}</CardTitle>
+          <CardDescription>{t('stripeConnectDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {stripeStatus?.stripeOnboarded ? (
@@ -205,28 +210,24 @@ function AdminSettingsContent() {
                 ✓
               </div>
               <div>
-                <p className="font-medium">Stripe account connected</p>
+                <p className="font-medium">{t('stripeConnected')}</p>
                 <p className="text-sm text-muted-foreground">
-                  Account ID: {stripeStatus.stripeAccountId}
+                  {t('stripeAccountId')}: {stripeStatus.stripeAccountId}
                 </p>
               </div>
             </div>
           ) : stripeStatus?.stripeAccountId ? (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Your Stripe account has been created but onboarding is not complete.
-              </p>
+              <p className="text-sm text-muted-foreground">{t('stripeIncomplete')}</p>
               <Button onClick={startStripeOnboarding} disabled={stripeLoading}>
-                {stripeLoading ? 'Redirecting...' : 'Complete Stripe Onboarding'}
+                {stripeLoading ? t('redirecting') : t('completeStripeOnboarding')}
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Connect a Stripe account to start receiving tip payments from guests.
-              </p>
+              <p className="text-sm text-muted-foreground">{t('connectStripeAccount')}</p>
               <Button onClick={startStripeOnboarding} disabled={stripeLoading}>
-                {stripeLoading ? 'Redirecting...' : 'Connect Stripe Account'}
+                {stripeLoading ? t('redirecting') : t('connectStripe')}
               </Button>
             </div>
           )}
@@ -238,16 +239,16 @@ function AdminSettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5" />
-            Your Two-Factor Authentication
+            {t('yourMfa')}
           </CardTitle>
-          <CardDescription>Add an extra layer of security to your account</CardDescription>
+          <CardDescription>{t('mfaSecurityDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span>Status:</span>
+              <span>{tc('status')}:</span>
               <Badge variant={mfaEnabled ? 'success' : 'secondary'}>
-                {mfaEnabled ? 'Enabled' : 'Disabled'}
+                {mfaEnabled ? tc('enabled') : tc('disabled')}
               </Badge>
             </div>
             {mfaEnabled ? (
@@ -255,22 +256,17 @@ function AdminSettingsContent() {
                 variant="outline"
                 disabled={mfaLoading}
                 onClick={async () => {
-                  if (
-                    !confirm(
-                      'This will disable two-factor authentication on your account. Continue?',
-                    )
-                  )
-                    return;
+                  if (!confirm(t('disableMfaConfirm'))) return;
                   setMfaLoading(true);
                   const res = await api.post('/auth/mfa/disable');
                   if (res.success) setMfaEnabled(false);
                   setMfaLoading(false);
                 }}
               >
-                {mfaLoading ? 'Disabling...' : 'Disable MFA'}
+                {mfaLoading ? t('disablingMfa') : t('disableMfa')}
               </Button>
             ) : (
-              <Button onClick={() => router.push('/mfa-setup')}>Set Up MFA</Button>
+              <Button onClick={() => router.push('/mfa-setup')}>{t('setUpMfa')}</Button>
             )}
           </div>
         </CardContent>
@@ -281,19 +277,15 @@ function AdminSettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5" />
-            Hotel Security Policy
+            {t('hotelSecurityPolicy')}
           </CardTitle>
-          <CardDescription>
-            Require all staff members to use two-factor authentication
-          </CardDescription>
+          <CardDescription>{t('requireMfaDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Require MFA for Staff</p>
-              <p className="text-sm text-muted-foreground">
-                Staff without MFA will be prompted to set it up on next login
-              </p>
+              <p className="font-medium">{t('requireMfaForStaff')}</p>
+              <p className="text-sm text-muted-foreground">{t('requireMfaHint')}</p>
             </div>
             <Button
               variant={hotel.mfaRequired ? 'default' : 'outline'}
@@ -310,16 +302,14 @@ function AdminSettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" />
-            Hotel Branding
+            {t('hotelBranding')}
           </CardTitle>
-          <CardDescription>
-            Customize your hotel&apos;s logo and colors for the guest tip flow
-          </CardDescription>
+          <CardDescription>{t('hotelBrandingDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Live preview */}
           <div>
-            <Label className="mb-2 block">Preview</Label>
+            <Label className="mb-2 block">{t('preview')}</Label>
             <HotelHero
               hotelName={hotel.name}
               logoUrl={logoPreview || undefined}
@@ -330,7 +320,7 @@ function AdminSettingsContent() {
 
           {/* Logo upload */}
           <div>
-            <Label className="mb-2 block">Hotel Logo</Label>
+            <Label className="mb-2 block">{t('hotelLogo')}</Label>
             <input
               ref={logoInputRef}
               type="file"
@@ -376,13 +366,13 @@ function AdminSettingsContent() {
                 )}
               </div>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">PNG, JPG, or WebP. Max 2MB.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('logoUploadHint')}</p>
           </div>
 
           {/* Color pickers */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label className="mb-2 block">Primary Color</Label>
+              <Label className="mb-2 block">{t('primaryColor')}</Label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -409,7 +399,7 @@ function AdminSettingsContent() {
               </div>
             </div>
             <div>
-              <Label className="mb-2 block">Secondary Color</Label>
+              <Label className="mb-2 block">{t('secondaryColor')}</Label>
               <div className="flex items-center gap-2">
                 <input
                   type="color"
@@ -438,7 +428,7 @@ function AdminSettingsContent() {
           </div>
 
           <Button onClick={saveBranding} disabled={brandingSaving}>
-            {brandingSaving ? 'Saving...' : 'Save Branding'}
+            {brandingSaving ? tc('saving') : t('saveBranding')}
           </Button>
         </CardContent>
       </Card>
@@ -448,12 +438,9 @@ function AdminSettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Guest Feedback Tags
+            {t('guestFeedbackTags')}
           </CardTitle>
-          <CardDescription>
-            Configure the feedback tags guests can select when rating their stay. If none are set,
-            default tags will be used.
-          </CardDescription>
+          <CardDescription>{t('feedbackTagsDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2">
@@ -473,15 +460,13 @@ function AdminSettingsContent() {
               </span>
             ))}
             {feedbackTags.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No custom tags configured. Default tags will be shown to guests.
-              </p>
+              <p className="text-sm text-muted-foreground">{t('noCustomTags')}</p>
             )}
           </div>
           {feedbackTags.length < 10 && (
             <div className="flex gap-2">
               <Input
-                placeholder="Add a tag..."
+                placeholder={t('addTag') + '...'}
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 maxLength={50}
@@ -514,7 +499,7 @@ function AdminSettingsContent() {
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            {feedbackTags.length}/10 tags. Press Enter or click + to add.
+            {t('tagsCount', { count: feedbackTags.length, max: 10 })}
           </p>
         </CardContent>
       </Card>
@@ -522,12 +507,12 @@ function AdminSettingsContent() {
       <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle>Tip Configuration</CardTitle>
-          <CardDescription>Configure suggested tip amounts and limits</CardDescription>
+          <CardTitle>{t('tipConfiguration')}</CardTitle>
+          <CardDescription>{t('tipConfigDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Suggested Amounts (cents)</Label>
+            <Label>{t('suggestedAmounts')}</Label>
             <div className="flex gap-2 mt-2">
               {hotel.suggestedAmounts.map((amount, i) => (
                 <Input
@@ -544,12 +529,13 @@ function AdminSettingsContent() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Current: {hotel.suggestedAmounts.map((a) => formatCurrency(a)).join(', ')}
+              {t('currentAmounts')}:{' '}
+              {hotel.suggestedAmounts.map((a) => formatCurrency(a, 'usd', locale)).join(', ')}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Minimum Tip (cents)</Label>
+              <Label>{t('minimumTip')}</Label>
               <Input
                 type="number"
                 value={hotel.minTipAmount}
@@ -559,7 +545,7 @@ function AdminSettingsContent() {
               />
             </div>
             <div>
-              <Label>Maximum Tip (cents)</Label>
+              <Label>{t('maximumTip')}</Label>
               <Input
                 type="number"
                 value={hotel.maxTipAmount}
@@ -575,17 +561,17 @@ function AdminSettingsContent() {
       <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
-          <CardTitle>Tip Pooling</CardTitle>
-          <CardDescription>Configure how tips are distributed among staff</CardDescription>
+          <CardTitle>{t('tipPooling')}</CardTitle>
+          <CardDescription>{t('tipPoolingDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <span>Enable Tip Pooling</span>
+            <span>{t('enableTipPooling')}</span>
             <Button
               variant={hotel.poolingEnabled ? 'default' : 'outline'}
               onClick={() => setHotel({ ...hotel, poolingEnabled: !hotel.poolingEnabled })}
             >
-              {hotel.poolingEnabled ? 'Enabled' : 'Disabled'}
+              {hotel.poolingEnabled ? tc('enabled') : tc('disabled')}
             </Button>
           </div>
           {hotel.poolingEnabled && (
@@ -598,7 +584,7 @@ function AdminSettingsContent() {
                     setPoolPreview([]);
                   }}
                 >
-                  Equal Split
+                  {t('equalSplit')}
                 </Button>
                 <Button
                   variant={hotel.poolingType === 'weighted' ? 'default' : 'outline'}
@@ -609,7 +595,7 @@ function AdminSettingsContent() {
                     });
                   }}
                 >
-                  Weighted
+                  {t('weighted')}
                 </Button>
               </div>
               {hotel.poolingType === 'weighted' && poolPreview.length > 0 && (
@@ -617,7 +603,7 @@ function AdminSettingsContent() {
                   <div className="border-b bg-muted/50 px-4 py-2.5">
                     <p className="text-sm font-medium flex items-center gap-1.5">
                       <Weight className="h-4 w-4" />
-                      Pool Distribution Preview (based on $10.00 tip)
+                      {t('poolPreviewTitle')}
                     </p>
                   </div>
                   <div className="divide-y">
@@ -633,26 +619,23 @@ function AdminSettingsContent() {
                             {p.sharePercent}%
                           </span>
                           <span className="w-16 text-right font-medium">
-                            {formatCurrency(p.shareAmount)}
+                            {formatCurrency(p.shareAmount, 'usd', locale)}
                           </span>
                         </div>
                       </div>
                     ))}
                   </div>
                   <div className="border-t bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
-                    Edit individual weights on the{' '}
+                    {t('editWeightsHint')}{' '}
                     <a href="/admin-staff" className="underline hover:text-foreground">
-                      Staff Management
+                      {t('staffManagementPage')}
                     </a>{' '}
-                    page.
+                    {t('page')}.
                   </div>
                 </div>
               )}
               {hotel.poolingType === 'weighted' && poolPreview.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No staff have opted in to pooling yet. Staff must opt in to appear in the weighted
-                  distribution.
-                </p>
+                <p className="text-sm text-muted-foreground">{t('noPoolStaff')}</p>
               )}
             </div>
           )}
@@ -664,34 +647,28 @@ function AdminSettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5" />
-            Staff Leaderboard
+            {t('staffLeaderboard')}
           </CardTitle>
-          <CardDescription>
-            Allow staff to see a ranked leaderboard on their Performance page
-          </CardDescription>
+          <CardDescription>{t('staffLeaderboardDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Enable Leaderboard</p>
-              <p className="text-sm text-muted-foreground">
-                Staff can see how they rank against their peers
-              </p>
+              <p className="font-medium">{t('enableLeaderboard')}</p>
+              <p className="text-sm text-muted-foreground">{t('leaderboardHint')}</p>
             </div>
             <Button
               variant={hotel.leaderboardEnabled ? 'default' : 'outline'}
               onClick={() => setHotel({ ...hotel, leaderboardEnabled: !hotel.leaderboardEnabled })}
             >
-              {hotel.leaderboardEnabled ? 'Enabled' : 'Disabled'}
+              {hotel.leaderboardEnabled ? tc('enabled') : tc('disabled')}
             </Button>
           </div>
           {hotel.leaderboardEnabled && (
             <div className="flex items-center justify-between border-t pt-4">
               <div>
-                <p className="font-medium">Anonymize Names</p>
-                <p className="text-sm text-muted-foreground">
-                  Hide staff names on the leaderboard (each person still sees their own)
-                </p>
+                <p className="font-medium">{t('anonymizeNames')}</p>
+                <p className="text-sm text-muted-foreground">{t('anonymizeHint')}</p>
               </div>
               <Button
                 variant={hotel.leaderboardAnonymized ? 'default' : 'outline'}
@@ -699,7 +676,7 @@ function AdminSettingsContent() {
                   setHotel({ ...hotel, leaderboardAnonymized: !hotel.leaderboardAnonymized })
                 }
               >
-                {hotel.leaderboardAnonymized ? 'Anonymized' : 'Visible'}
+                {hotel.leaderboardAnonymized ? t('anonymized') : t('visible')}
               </Button>
             </div>
           )}
@@ -711,33 +688,28 @@ function AdminSettingsContent() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            Location Verification
+            {t('locationVerification')}
           </CardTitle>
-          <CardDescription>
-            Optionally verify that guests are at the hotel when tipping. This is a soft check — it
-            warns but never blocks a tip.
-          </CardDescription>
+          <CardDescription>{t('locationVerificationDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium">Enable Geofence</p>
-              <p className="text-sm text-muted-foreground">
-                Verify guest location when they leave a tip
-              </p>
+              <p className="font-medium">{t('enableGeofence')}</p>
+              <p className="text-sm text-muted-foreground">{t('geofenceHint')}</p>
             </div>
             <Button
               variant={hotel.geofenceEnabled ? 'default' : 'outline'}
               onClick={() => setHotel({ ...hotel, geofenceEnabled: !hotel.geofenceEnabled })}
             >
-              {hotel.geofenceEnabled ? 'Enabled' : 'Disabled'}
+              {hotel.geofenceEnabled ? tc('enabled') : tc('disabled')}
             </Button>
           </div>
           {hotel.geofenceEnabled && (
             <div className="space-y-4 border-t pt-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label>Latitude</Label>
+                  <Label>{t('latitude')}</Label>
                   <Input
                     type="number"
                     step="any"
@@ -752,7 +724,7 @@ function AdminSettingsContent() {
                   />
                 </div>
                 <div>
-                  <Label>Longitude</Label>
+                  <Label>{t('longitude')}</Label>
                   <Input
                     type="number"
                     step="any"
@@ -768,7 +740,7 @@ function AdminSettingsContent() {
                 </div>
               </div>
               <div>
-                <Label>Radius (meters)</Label>
+                <Label>{t('radiusMeters')}</Label>
                 <Input
                   type="number"
                   min={50}
@@ -781,21 +753,16 @@ function AdminSettingsContent() {
                     })
                   }
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  50–5000 meters. Default is 500m.
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{t('radiusHint')}</p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                To find your hotel&apos;s coordinates, search for it on Google Maps, right-click the
-                location, and copy the latitude and longitude.
-              </p>
+              <p className="text-xs text-muted-foreground">{t('coordsHint')}</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       <Button onClick={saveSettings} disabled={saving}>
-        {saving ? 'Saving...' : 'Save Settings'}
+        {saving ? tc('saving') : t('saveSettings')}
       </Button>
     </div>
   );

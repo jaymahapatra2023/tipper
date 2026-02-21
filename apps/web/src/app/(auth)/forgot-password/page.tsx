@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { forgotPasswordSchema } from '@tipper/shared';
 import { Mail, ArrowLeft } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/card';
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations('auth');
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,7 +35,7 @@ export default function ForgotPasswordPage() {
       await api.post('/auth/forgot-password', data);
       setSubmitted(true);
     } catch {
-      setSubmitted(true); // Always show success to prevent enumeration
+      setSubmitted(true);
     }
   }
 
@@ -50,11 +52,9 @@ export default function ForgotPasswordPage() {
         <Card className="overflow-hidden shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
           <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="text-center">
-            <CardTitle>Forgot Password</CardTitle>
+            <CardTitle>{t('forgotPasswordTitle')}</CardTitle>
             <CardDescription>
-              {submitted
-                ? 'Check your email for a reset link'
-                : "Enter your email and we'll send you a reset link"}
+              {submitted ? t('resetSent') : t('forgotPasswordDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -63,15 +63,12 @@ export default function ForgotPasswordPage() {
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Mail className="h-7 w-7" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  If an account exists with that email, we&apos;ve sent a password reset link.
-                  Please check your inbox and spam folder.
-                </p>
+                <p className="text-sm text-muted-foreground">{t('resetSent')}</p>
               </div>
             ) : (
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div>
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('emailLabel')}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -86,7 +83,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? 'Sending...' : 'Send Reset Link'}
+                  {form.formState.isSubmitting ? t('sending') : t('sendResetLink')}
                 </Button>
               </form>
             )}
@@ -97,7 +94,7 @@ export default function ForgotPasswordPage() {
               className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              Back to Login
+              {t('backToLogin')}
             </Link>
           </CardFooter>
         </Card>

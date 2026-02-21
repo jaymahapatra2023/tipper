@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Building2, Receipt, DollarSign, Wallet, TrendingUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +19,8 @@ interface PlatformAnalytics {
 }
 
 export default function PlatformAnalyticsPage() {
+  const t = useTranslations('platform');
+  const locale = useLocale();
   const [data, setData] = useState<PlatformAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,12 +35,12 @@ export default function PlatformAnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Platform Analytics" description="Overview of platform-wide metrics" />
+      <PageHeader title={t('analyticsTitle')} description={t('analyticsDesc')} />
 
       <div className="grid gap-4 md:grid-cols-5">
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Active Hotels</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t('totalHotels')}</CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
               <Building2 className="h-4 w-4" />
             </div>
@@ -47,7 +51,7 @@ export default function PlatformAnalyticsPage() {
         </Card>
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total Tips</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t('totalTips')}</CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <Receipt className="h-4 w-4" />
             </div>
@@ -58,33 +62,33 @@ export default function PlatformAnalyticsPage() {
         </Card>
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Total Volume</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t('totalRevenue')}</CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
               <DollarSign className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(data?.totalVolume || 0)}
+              {formatCurrency(data?.totalVolume || 0, undefined, locale)}
             </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Platform Revenue</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t('platformFees')}</CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
               <Wallet className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(data?.totalRevenue || 0)}
+              {formatCurrency(data?.totalRevenue || 0, undefined, locale)}
             </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Last 30 Days</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">{t('revenueOverTime')}</CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
               <TrendingUp className="h-4 w-4" />
             </div>

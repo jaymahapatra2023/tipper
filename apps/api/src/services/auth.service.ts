@@ -311,7 +311,15 @@ export class AuthService {
   async getUserById(userId: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, role: true, mfaEnabled: true, createdAt: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        mfaEnabled: true,
+        preferredLocale: true,
+        createdAt: true,
+      },
     });
     if (!user) throw new NotFoundError('User');
 

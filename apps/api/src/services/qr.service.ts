@@ -42,6 +42,7 @@ export class QrService {
                 primaryColor: true,
                 secondaryColor: true,
                 feedbackTags: true,
+                defaultGuestLocale: true,
               },
             },
           },
@@ -82,6 +83,7 @@ export class QrService {
       secondaryColor: qrCode.room.hotel.secondaryColor ?? undefined,
       feedbackTags:
         qrCode.room.hotel.feedbackTags.length > 0 ? qrCode.room.hotel.feedbackTags : undefined,
+      defaultGuestLocale: qrCode.room.hotel.defaultGuestLocale,
     };
   }
 

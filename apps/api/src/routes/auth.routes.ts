@@ -284,6 +284,24 @@ router.post(
   },
 );
 
+router.put('/locale', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { preferredLocale } = req.body;
+    if (!['en', 'es', 'fr'].includes(preferredLocale)) {
+      sendSuccess(res, { message: 'Invalid locale' }, 400);
+      return;
+    }
+    const { prisma } = await import('@tipper/database');
+    await prisma.user.update({
+      where: { id: req.user!.userId },
+      data: { preferredLocale },
+    });
+    sendSuccess(res, { message: 'Locale updated' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post(
   '/mfa/disable',
   authenticate,

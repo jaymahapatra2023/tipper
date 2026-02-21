@@ -27,6 +27,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -122,14 +124,19 @@ function RevenueTooltip({
   payload?: { value: number; payload: { count: number } }[];
   label?: string;
 }) {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border bg-background p-3 shadow-md">
       <p className="text-sm font-medium">{label}</p>
       <p className="text-sm text-muted-foreground">
-        {payload[0].payload.count} tip{payload[0].payload.count !== 1 ? 's' : ''}
+        {payload[0].payload.count}{' '}
+        {payload[0].payload.count !== 1 ? t('ratedTipsPlural') : t('tips')}
       </p>
-      <p className="text-sm font-semibold text-emerald-600">{formatCurrency(payload[0].value)}</p>
+      <p className="text-sm font-semibold text-emerald-600">
+        {formatCurrency(payload[0].value, 'usd', locale)}
+      </p>
     </div>
   );
 }
@@ -141,15 +148,19 @@ function RoomTooltip({
   active?: boolean;
   payload?: { value: number; payload: { roomNumber: string; count: number } }[];
 }) {
+  const t = useTranslations('admin');
+  const locale = useLocale();
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (
     <div className="rounded-lg border bg-background p-3 shadow-md">
-      <p className="text-sm font-medium">Room {d.roomNumber}</p>
+      <p className="text-sm font-medium">{d.roomNumber}</p>
       <p className="text-sm text-muted-foreground">
-        {d.count} tip{d.count !== 1 ? 's' : ''}
+        {d.count} {d.count !== 1 ? t('ratedTipsPlural') : t('tips')}
       </p>
-      <p className="text-sm font-semibold text-emerald-600">{formatCurrency(payload[0].value)}</p>
+      <p className="text-sm font-semibold text-emerald-600">
+        {formatCurrency(payload[0].value, 'usd', locale)}
+      </p>
     </div>
   );
 }
@@ -191,6 +202,9 @@ function renderPieLabel({
 }
 
 export default function AdminAnalyticsPage() {
+  const t = useTranslations('admin');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -270,43 +284,45 @@ export default function AdminAnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      <PageHeader title="Analytics" description="Analyze tipping trends and revenue" />
+      <PageHeader title={t('analyticsTitle')} description={t('analyticsDesc')} />
 
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-wrap gap-4 items-end">
             <div>
-              <Label>Start Date</Label>
+              <Label>{tc('startDate')}</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div>
-              <Label>End Date</Label>
+              <Label>{tc('endDate')}</Label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
-            <Button onClick={loadAnalytics}>Apply</Button>
+            <Button onClick={loadAnalytics}>{tc('search')}</Button>
             <Button
               variant={autoRefresh ? 'default' : 'outline'}
               size="sm"
               onClick={() => setAutoRefresh((v) => !v)}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} />
-              {autoRefresh ? 'Auto-refresh On' : 'Auto-refresh'}
+              {autoRefresh ? t('autoRefreshOn') : t('autoRefresh')}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" disabled={exporting}>
                   <Download className="mr-2 h-4 w-4" />
-                  {exporting ? 'Exporting...' : 'Export CSV'}
+                  {exporting ? tc('exporting') : tc('exportCsv')}
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => downloadExport('tips')}>Tips CSV</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadExport('tips')}>
+                  {t('tipsCsv')}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => downloadExport('payouts')}>
-                  Payouts CSV
+                  {t('payoutsCsv')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => downloadExport('staff')}>
-                  Staff Performance CSV
+                  {t('staffPerfCsv')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -323,7 +339,7 @@ export default function AdminAnalyticsPage() {
             <div className="grid gap-4 md:grid-cols-5">
               <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Total Tips</CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground">{t('totalTips')}</CardTitle>
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                     <Receipt className="h-4 w-4" />
                   </div>
@@ -334,46 +350,50 @@ export default function AdminAnalyticsPage() {
               </Card>
               <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Gross Amount</CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground">
+                    {t('grossAmount')}
+                  </CardTitle>
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
                     <DollarSign className="h-4 w-4" />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold tracking-tight">
-                    {formatCurrency(data.totalAmount)}
+                    {formatCurrency(data.totalAmount, 'usd', locale)}
                   </p>
                 </CardContent>
               </Card>
               <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Net Amount</CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground">{t('netAmount')}</CardTitle>
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
                     <Wallet className="h-4 w-4" />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold tracking-tight">
-                    {formatCurrency(data.netAmount)}
+                    {formatCurrency(data.netAmount, 'usd', locale)}
                   </p>
                 </CardContent>
               </Card>
               <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Average Tip</CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground">{t('averageTip')}</CardTitle>
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
                     <TrendingUp className="h-4 w-4" />
                   </div>
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold tracking-tight">
-                    {formatCurrency(data.averageTip)}
+                    {formatCurrency(data.averageTip, 'usd', locale)}
                   </p>
                 </CardContent>
               </Card>
               <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm text-muted-foreground">Average Rating</CardTitle>
+                  <CardTitle className="text-sm text-muted-foreground">
+                    {t('averageRating')}
+                  </CardTitle>
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">
                     <Star className="h-4 w-4" />
                   </div>
@@ -386,7 +406,8 @@ export default function AdminAnalyticsPage() {
                   </p>
                   {data.ratedTipCount != null && data.ratedTipCount > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      {data.ratedTipCount} rated tip{data.ratedTipCount !== 1 ? 's' : ''}
+                      {data.ratedTipCount}{' '}
+                      {data.ratedTipCount !== 1 ? t('ratedTipsPlural') : t('ratedTips')}
                     </p>
                   )}
                 </CardContent>
@@ -397,7 +418,7 @@ export default function AdminAnalyticsPage() {
             {dateData.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Revenue Over Time</CardTitle>
+                  <CardTitle>{t('revenueOverTime')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -438,7 +459,7 @@ export default function AdminAnalyticsPage() {
               {topRooms.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Tips by Room</CardTitle>
+                    <CardTitle>{t('tipsByRoom')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -465,7 +486,7 @@ export default function AdminAnalyticsPage() {
               {staffPieData.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Staff Distribution</CardTitle>
+                    <CardTitle>{t('staffDistribution')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
@@ -483,7 +504,9 @@ export default function AdminAnalyticsPage() {
                             <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Tooltip
+                          formatter={(value: number) => formatCurrency(value, 'usd', locale)}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -495,7 +518,7 @@ export default function AdminAnalyticsPage() {
             {data.ratingDistribution && data.ratingDistribution.some((r) => r.count > 0) && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Rating Distribution</CardTitle>
+                  <CardTitle>{t('ratingDistribution')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -531,7 +554,7 @@ export default function AdminAnalyticsPage() {
             {data.tipsByStaff && data.tipsByStaff.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Tips by Staff</CardTitle>
+                  <CardTitle>{t('tipsByStaff')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-1">
@@ -547,7 +570,7 @@ export default function AdminAnalyticsPage() {
                           <div>
                             <p className="font-medium">{s.staffName}</p>
                             <p className="text-sm text-muted-foreground">
-                              {s.count} tip{s.count !== 1 ? 's' : ''}
+                              {s.count} {s.count !== 1 ? t('ratedTipsPlural') : t('tips')}
                               {s.averageRating != null && (
                                 <span className="ml-2">
                                   {s.averageRating}/5
@@ -557,7 +580,9 @@ export default function AdminAnalyticsPage() {
                             </p>
                           </div>
                         </div>
-                        <span className="font-medium">{formatCurrency(s.total)}</span>
+                        <span className="font-medium">
+                          {formatCurrency(s.total, 'usd', locale)}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -568,14 +593,14 @@ export default function AdminAnalyticsPage() {
             {/* Detailed Room List */}
             <Card>
               <CardHeader>
-                <CardTitle>Tips by Room (Detail)</CardTitle>
+                <CardTitle>{t('tipsByRoomDetail')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {data.tipsByRoom.length === 0 ? (
                   <EmptyState
                     icon={BarChart3}
-                    title="No data for this period"
-                    description="Try adjusting the date range"
+                    title={t('noDataForPeriod')}
+                    description={t('adjustDateRange')}
                   />
                 ) : (
                   <div className="space-y-1">
@@ -584,9 +609,9 @@ export default function AdminAnalyticsPage() {
                         key={r.roomNumber}
                         className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                       >
-                        <span>Room {r.roomNumber}</span>
+                        <span>{r.roomNumber}</span>
                         <span className="font-medium">
-                          {formatCurrency(r.total)} ({r.count})
+                          {formatCurrency(r.total, 'usd', locale)} ({r.count})
                         </span>
                       </div>
                     ))}

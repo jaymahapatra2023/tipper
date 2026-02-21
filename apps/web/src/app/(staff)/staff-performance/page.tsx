@@ -17,6 +17,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -81,15 +83,23 @@ function MilestoneCard({ milestone }: { milestone: StaffMilestone }) {
   );
 }
 
-function LeaderboardSection({ entries }: { entries: LeaderboardEntry[] }) {
+function LeaderboardSection({
+  entries,
+  t,
+  locale,
+}: {
+  entries: LeaderboardEntry[];
+  t: (key: string) => string;
+  locale: string;
+}) {
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="h-5 w-5" />
-          Leaderboard
+          {t('leaderboard')}
         </CardTitle>
-        <CardDescription>See how you rank among your team</CardDescription>
+        <CardDescription>{t('leaderboardDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-1">
@@ -120,7 +130,7 @@ function LeaderboardSection({ entries }: { entries: LeaderboardEntry[] }) {
                   <p className="font-medium">
                     {entry.staffName}
                     {entry.isCurrentUser && (
-                      <span className="ml-2 text-xs text-primary">(You)</span>
+                      <span className="ml-2 text-xs text-primary">({t('you')})</span>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -131,7 +141,7 @@ function LeaderboardSection({ entries }: { entries: LeaderboardEntry[] }) {
                   </p>
                 </div>
               </div>
-              <Badge variant="success">{formatCurrency(entry.totalEarnings)}</Badge>
+              <Badge variant="success">{formatCurrency(entry.totalEarnings, 'usd', locale)}</Badge>
             </div>
           ))}
         </div>
@@ -144,21 +154,25 @@ function ChartTooltip({
   active,
   payload,
   label,
+  locale,
 }: {
   active?: boolean;
   payload?: { value: number }[];
   label?: string;
+  locale?: string;
 }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border bg-card p-3 shadow-sm">
       <p className="text-sm font-medium">{label}</p>
-      <p className="text-sm text-primary">{formatCurrency(payload[0].value)}</p>
+      <p className="text-sm text-primary">{formatCurrency(payload[0].value, 'usd', locale)}</p>
     </div>
   );
 }
 
 export default function StaffPerformancePage() {
+  const t = useTranslations('staff');
+  const locale = useLocale();
   const [data, setData] = useState<StaffPerformanceResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -171,28 +185,27 @@ export default function StaffPerformancePage() {
 
   if (loading) return <LoadingSpinner />;
   if (!data)
-    return <div className="text-center text-muted-foreground">Failed to load performance data</div>;
+    return <div className="text-center text-muted-foreground">{t('failedToLoadPerformance')}</div>;
 
   const { metrics, leaderboard } = data;
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Performance"
-        description="Track your earnings trends, milestones, and rankings"
-      />
+      <PageHeader title={t('performanceTitle')} description={t('performanceDesc')} />
 
       {/* Metrics cards */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="overflow-hidden card-hover">
           <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Week</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('thisWeekMetric')}
+            </CardTitle>
             <DollarSign className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold tracking-tight">
-              {formatCurrency(metrics.thisWeekEarnings)}
+              {formatCurrency(metrics.thisWeekEarnings, 'usd', locale)}
             </p>
             <TrendBadge value={metrics.weekTrend} />
           </CardContent>
@@ -200,14 +213,16 @@ export default function StaffPerformancePage() {
 
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('thisMonthMetric')}
+            </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
               <TrendingUp className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold tracking-tight">
-              {formatCurrency(metrics.thisMonthEarnings)}
+              {formatCurrency(metrics.thisMonthEarnings, 'usd', locale)}
             </p>
             <TrendBadge value={metrics.monthTrend} />
           </CardContent>
@@ -215,7 +230,9 @@ export default function StaffPerformancePage() {
 
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Tips</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('totalTipsMetric')}
+            </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
               <Hash className="h-4 w-4" />
             </div>
@@ -223,25 +240,27 @@ export default function StaffPerformancePage() {
           <CardContent>
             <p className="text-2xl font-bold tracking-tight">{metrics.tipCount}</p>
             <p className="text-xs text-muted-foreground">
-              {formatCurrency(metrics.totalEarnings)} total
+              {formatCurrency(metrics.totalEarnings, 'usd', locale)} {t('total')}
             </p>
           </CardContent>
         </Card>
 
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Average Tip</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('averageTipMetric')}
+            </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
               <Receipt className="h-4 w-4" />
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold tracking-tight">
-              {formatCurrency(metrics.averageTip)}
+              {formatCurrency(metrics.averageTip, 'usd', locale)}
             </p>
             {metrics.averageRating != null && (
               <p className="text-xs text-muted-foreground">
-                {Math.round(metrics.averageRating * 10) / 10}/5 avg rating
+                {Math.round(metrics.averageRating * 10) / 10}/5 {t('avgRating')}
               </p>
             )}
           </CardContent>
@@ -251,7 +270,7 @@ export default function StaffPerformancePage() {
       {/* Earnings chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Earnings (Last 30 Days)</CardTitle>
+          <CardTitle>{t('earningsLast30')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-64">
@@ -277,7 +296,7 @@ export default function StaffPerformancePage() {
                   axisLine={false}
                   width={45}
                 />
-                <Tooltip content={<ChartTooltip />} />
+                <Tooltip content={<ChartTooltip locale={locale} />} />
                 <Area
                   type="monotone"
                   dataKey="earnings"
@@ -296,9 +315,9 @@ export default function StaffPerformancePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Award className="h-5 w-5" />
-            Milestones
+            {t('milestones')}
           </CardTitle>
-          <CardDescription>Track your progress and unlock achievements</CardDescription>
+          <CardDescription>{t('milestonesDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -310,7 +329,9 @@ export default function StaffPerformancePage() {
       </Card>
 
       {/* Leaderboard */}
-      {leaderboard && leaderboard.length > 0 && <LeaderboardSection entries={leaderboard} />}
+      {leaderboard && leaderboard.length > 0 && (
+        <LeaderboardSection entries={leaderboard} t={t} locale={locale} />
+      )}
     </div>
   );
 }

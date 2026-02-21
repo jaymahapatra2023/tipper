@@ -1,9 +1,14 @@
+'use client';
+
 import Link from 'next/link';
 import { QrCode, HandCoins, CreditCard, Sparkles, Hotel, ShieldCheck } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { LandingNav } from '@/components/shared/landing-nav';
 
 export default function HomePage() {
+  const t = useTranslations('home');
+
   return (
     <div className="flex min-h-screen flex-col overflow-hidden">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-card/75 backdrop-blur-md">
@@ -22,26 +27,25 @@ export default function HomePage() {
         <div className="relative max-w-4xl text-center">
           <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary ring-1 ring-primary/20">
             <Sparkles className="h-4 w-4" />
-            Cashless tipping for modern hotels
+            {t('badge')}
           </div>
           <h2 className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-6xl">
-            Delight Guests.
+            {t('heroTitle1')}
             <br />
-            Reward Housekeeping <span className="text-primary">Instantly.</span>
+            {t('heroTitle2')} <span className="text-primary">{t('heroTitle3')}</span>
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            Turn every room into a secure digital tipping point. Guests scan, select, and pay in
-            seconds. Staff gets transparent payouts. Hotels get zero-cash operations.
+            {t('heroDescription')}
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link href="/register-hotel">
               <Button variant="gold" size="xl">
-                Launch for Your Hotel
+                {t('ctaLaunch')}
               </Button>
             </Link>
             <Link href="/login">
               <Button variant="outline" size="lg">
-                Admin Login
+                {t('ctaLogin')}
               </Button>
             </Link>
           </div>
@@ -51,27 +55,27 @@ export default function HomePage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
                 <Hotel className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">Hotel-Ready Setup</h3>
+              <h3 className="mt-4 text-lg font-semibold">{t('featureHotelTitle')}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Room-based QR activation, role-based access, and clean admin workflows.
+                {t('featureHotelDesc')}
               </p>
             </div>
             <div className="group glass-panel rounded-2xl p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 transition-transform duration-200 group-hover:scale-110">
                 <ShieldCheck className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">Secure by Default</h3>
+              <h3 className="mt-4 text-lg font-semibold">{t('featureSecureTitle')}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Stripe-powered checkout, tokenized payments, and encrypted transaction paths.
+                {t('featureSecureDesc')}
               </p>
             </div>
             <div className="group glass-panel rounded-2xl p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 transition-transform duration-200 group-hover:scale-110">
                 <HandCoins className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold">Staff-First Payouts</h3>
+              <h3 className="mt-4 text-lg font-semibold">{t('featurePayoutsTitle')}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Transparent earnings, payout status visibility, and optional pooling support.
+                {t('featurePayoutsDesc')}
               </p>
             </div>
           </div>
@@ -82,34 +86,32 @@ export default function HomePage() {
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               <QrCode className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold">Scan QR Code</h3>
+            <h3 className="mt-4 text-lg font-semibold">{t('stepScanTitle')}</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Find the QR code in your hotel room and scan it with your phone
+              {t('stepScanDesc')}
             </p>
           </div>
           <div className="group glass-panel rounded-2xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               <HandCoins className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold">Choose Amount</h3>
+            <h3 className="mt-4 text-lg font-semibold">{t('stepAmountTitle')}</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Select a suggested amount or enter a custom tip
+              {t('stepAmountDesc')}
             </p>
           </div>
           <div className="group glass-panel rounded-2xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               <CreditCard className="h-7 w-7" />
             </div>
-            <h3 className="mt-4 text-lg font-semibold">Pay Securely</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Pay with credit card, Apple Pay, or Google Pay via Stripe
-            </p>
+            <h3 className="mt-4 text-lg font-semibold">{t('stepPayTitle')}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t('stepPayDesc')}</p>
           </div>
         </div>
       </main>
 
       <footer className="border-t border-border/60 bg-card/55 py-8 text-center text-sm text-muted-foreground backdrop-blur">
-        <p>&copy; {new Date().getFullYear()} Tipper. Digital Tipping Platform.</p>
+        <p>{t('footerCopyright', { year: new Date().getFullYear() })}</p>
       </footer>
     </div>
   );

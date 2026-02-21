@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { DollarSign, Clock, TrendingUp, DoorOpen, Receipt, Star } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,6 +15,9 @@ import type { StaffDashboard } from '@tipper/shared';
 
 export default function StaffDashboardPage() {
   const { user } = useAuth();
+  const t = useTranslations('staff');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const [dashboard, setDashboard] = useState<StaffDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,7 +31,7 @@ export default function StaffDashboardPage() {
   if (loading) return <LoadingSpinner />;
 
   if (!dashboard) {
-    return <div className="text-center text-muted-foreground">Failed to load dashboard</div>;
+    return <div className="text-center text-muted-foreground">{tc('failedToLoad')}</div>;
   }
 
   const firstName = user?.name?.split(' ')[0] ?? 'there';
@@ -34,8 +39,10 @@ export default function StaffDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Hello, {firstName}!</h1>
-        <p className="text-muted-foreground mt-1">Here&apos;s your earnings overview</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('dashboardTitle', { name: firstName })}
+        </h1>
+        <p className="text-muted-foreground mt-1">{t('dashboardDesc')}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -43,33 +50,35 @@ export default function StaffDashboardPage() {
           <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Total Earnings
+              {t('totalEarnings')}
             </CardTitle>
             <DollarSign className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(dashboard.totalEarnings)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="card-hover">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-              <TrendingUp className="h-4 w-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold tracking-tight">
-              {formatCurrency(dashboard.periodEarnings)}
+              {formatCurrency(dashboard.totalEarnings, 'usd', locale)}
             </p>
           </CardContent>
         </Card>
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Average Rating
+              {t('thisMonth')}
+            </CardTitle>
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <TrendingUp className="h-4 w-4" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(dashboard.periodEarnings, 'usd', locale)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="card-hover">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('avgRating')}
             </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50 text-yellow-600">
               <Star className="h-4 w-4" />
@@ -91,7 +100,7 @@ export default function StaffDashboardPage() {
         <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Pending Assignments
+              {tc('pending')} {t('assignmentsTitle')}
             </CardTitle>
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
               <Clock className="h-4 w-4" />
@@ -105,15 +114,11 @@ export default function StaffDashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Tips</CardTitle>
+          <CardTitle>{t('recentTips')}</CardTitle>
         </CardHeader>
         <CardContent>
           {dashboard.recentTips.length === 0 ? (
-            <EmptyState
-              icon={Receipt}
-              title="No tips received yet"
-              description="Tips will appear here as guests leave them"
-            />
+            <EmptyState icon={Receipt} title={t('noTipsYet')} description={t('tipsWillAppear')} />
           ) : (
             <div className="space-y-1">
               {dashboard.recentTips.map((tip) => (
@@ -126,8 +131,12 @@ export default function StaffDashboardPage() {
                       <DoorOpen className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="font-medium">Room {tip.roomNumber}</p>
-                      <p className="text-sm text-muted-foreground">{formatDate(tip.date)}</p>
+                      <p className="font-medium">
+                        {t('room')} {tip.roomNumber}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatDate(tip.date, locale)}
+                      </p>
                       {tip.message && (
                         <p className="text-sm italic mt-1">&quot;{tip.message}&quot;</p>
                       )}
@@ -148,7 +157,7 @@ export default function StaffDashboardPage() {
                         ))}
                       </div>
                     )}
-                    <Badge variant="success">{formatCurrency(tip.amount)}</Badge>
+                    <Badge variant="success">{formatCurrency(tip.amount, 'usd', locale)}</Badge>
                   </div>
                 </div>
               ))}

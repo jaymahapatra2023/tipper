@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterInput } from '@tipper/shared';
-import { ShieldCheck, Lock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ import {
 export default function RegisterPage() {
   const router = useRouter();
   const { register: signup } = useAuth();
+  const t = useTranslations('auth');
   const [error, setError] = useState('');
 
   const form = useForm<RegisterInput>({
@@ -33,8 +34,6 @@ export default function RegisterPage() {
     try {
       setError('');
       const user = await signup(data.email, data.password, data.name);
-      // New registrations default to 'guest' role — send to landing page
-      // Staff/admin accounts are created by hotel admins, not self-registration
       const redirect =
         user.role === 'platform_admin'
           ? '/platform-hotels'
@@ -56,20 +55,20 @@ export default function RegisterPage() {
           <Link href="/" className="text-3xl font-bold tracking-tight text-primary">
             Tipper
           </Link>
-          <p className="text-sm text-muted-foreground mt-1">Cashless tipping for modern hotels</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('joinTipper')}</p>
           <div className="mx-auto mt-3 h-px w-12 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         </div>
 
         <Card className="overflow-hidden shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
           <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="text-center">
-            <CardTitle>Create Account</CardTitle>
-            <CardDescription>Get started with Tipper</CardDescription>
+            <CardTitle>{t('createAccount')}</CardTitle>
+            <CardDescription>{t('joinTipper')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">{t('fullName')}</Label>
                 <Input id="name" {...form.register('name')} placeholder="John Doe" />
                 {form.formState.errors.name && (
                   <p className="text-sm text-destructive mt-1">
@@ -78,7 +77,7 @@ export default function RegisterPage() {
                 )}
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t('emailLabel')}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -92,43 +91,29 @@ export default function RegisterPage() {
                 )}
               </div>
               <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <Input id="password" type="password" {...form.register('password')} />
                 {form.formState.errors.password && (
                   <p className="text-sm text-destructive mt-1">
                     {form.formState.errors.password.message}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Must be 8+ characters with uppercase, lowercase, and number
-                </p>
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating account...' : 'Create Account'}
+                {form.formState.isSubmitting ? t('creatingAccount') : t('createAccount')}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="justify-center">
             <p className="text-sm text-muted-foreground">
-              Already have an account?{' '}
+              {t('hasAccount')}{' '}
               <Link href="/login" className="text-primary hover:underline">
-                Log in
+                {t('signIn')}
               </Link>
             </p>
           </CardFooter>
         </Card>
-
-        <div className="mt-6 flex items-center justify-center gap-6 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <ShieldCheck className="h-3.5 w-3.5" />
-            Secure login
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Lock className="h-3.5 w-3.5" />
-            Encrypted
-          </span>
-        </div>
       </div>
     </div>
   );
