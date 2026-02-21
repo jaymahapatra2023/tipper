@@ -76,8 +76,8 @@ async function main() {
       minTipAmount: 100,
       maxTipAmount: 50000,
       poolingEnabled: false,
-      primaryColor: '#0f1b2d',
-      secondaryColor: '#1a2744',
+      primaryColor: '#c9a84c',
+      secondaryColor: '#0f1b2d',
     },
   });
 
