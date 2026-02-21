@@ -245,13 +245,17 @@ model TipDistribution {
   id            String   @id @default(uuid())
   tipId         String   @map("tip_id")
   staffMemberId String   @map("staff_member_id")
+  payoutId      String?  @map("payout_id")
   amount        Int
   createdAt     DateTime @default(now()) @map("created_at")
 
   tip         Tip         @relation(fields: [tipId], references: [id], onDelete: Cascade)
   staffMember StaffMember @relation(fields: [staffMemberId], references: [id])
+  payout      Payout?     @relation(fields: [payoutId], references: [id])
 
   @@unique([tipId, staffMemberId])
+  @@index([payoutId])
+  @@index([staffMemberId, payoutId])
   @@map("tip_distributions")
 }
 
@@ -262,13 +266,16 @@ model Payout {
   currency         String       @default("usd")
   stripeTransferId String?      @unique @map("stripe_transfer_id")
   status           PayoutStatus @default(pending)
+  failureReason    String?      @map("failure_reason")
   processedAt      DateTime?    @map("processed_at")
   createdAt        DateTime     @default(now()) @map("created_at")
   updatedAt        DateTime     @updatedAt @map("updated_at")
 
-  staffMember StaffMember @relation(fields: [staffMemberId], references: [id])
+  staffMember   StaffMember       @relation(fields: [staffMemberId], references: [id])
+  distributions TipDistribution[]
 
   @@index([staffMemberId, createdAt])
+  @@index([status])
   @@map("payouts")
 }
 

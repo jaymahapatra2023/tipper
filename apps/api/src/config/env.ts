@@ -16,6 +16,7 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   MFA_ENCRYPTION_KEY: z.string().optional(),
+  PAYOUT_CRON: z.string().default('0 2 * * *'),
 });
 
 export type Env = z.infer<typeof envSchema>;

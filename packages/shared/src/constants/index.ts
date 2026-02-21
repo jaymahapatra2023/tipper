@@ -22,7 +22,11 @@ export const STRIPE_WEBHOOK_EVENTS = [
   'account.updated',
   'payout.paid',
   'payout.failed',
+  'transfer.created',
+  'transfer.reversed',
 ] as const;
+
+export const MIN_PAYOUT_AMOUNT = 100; // $1.00 in cents
 
 export const PAGINATION_DEFAULTS = {
   page: 1,

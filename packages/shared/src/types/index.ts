@@ -143,3 +143,41 @@ export interface HotelRegisterRequest {
   email: string;
   password: string;
 }
+
+export interface PayoutView {
+  id: string;
+  staffName: string;
+  staffEmail: string;
+  hotelName: string;
+  amount: number;
+  currency: string;
+  status: PayoutStatus;
+  failureReason?: string;
+  stripeTransferId?: string;
+  distributionCount: number;
+  processedAt?: string;
+  createdAt: string;
+}
+
+export interface PayoutAnalytics {
+  totalPaid: number;
+  totalPending: number;
+  totalFailed: number;
+  paidCount: number;
+  pendingCount: number;
+  failedCount: number;
+  last30DaysPaid: number;
+}
+
+export interface PayoutProcessResult {
+  processed: number;
+  failed: number;
+  skipped: number;
+}
+
+export interface StaffPayoutSummary {
+  pendingEarnings: number;
+  totalPaidOut: number;
+  lastPayoutDate?: string;
+  lastPayoutAmount?: number;
+}

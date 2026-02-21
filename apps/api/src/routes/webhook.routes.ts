@@ -4,6 +4,7 @@ import { prisma } from '@tipper/database';
 import { stripe } from '../config/stripe';
 import { env } from '../config/env';
 import { tipService } from '../services/tip.service';
+import { payoutService } from '../services/payout.service';
 
 const router: Router = Router();
 
@@ -51,6 +52,11 @@ router.post('/stripe', async (req: Request, res: Response, next: NextFunction) =
             data: { stripeOnboarded: true },
           });
         }
+        break;
+      }
+      case 'transfer.reversed': {
+        const transfer = event.data.object;
+        await payoutService.handleTransferReversed(transfer.id);
         break;
       }
       default:

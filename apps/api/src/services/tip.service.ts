@@ -68,14 +68,6 @@ export class TipService {
           hotelId: hotel.id,
           roomId: input.roomId,
         },
-        ...(hotel.stripeAccountId && hotel.stripeOnboarded
-          ? {
-              transfer_data: {
-                destination: hotel.stripeAccountId,
-                amount: netAmount,
-              },
-            }
-          : {}),
       });
 
       await prisma.tip.update({

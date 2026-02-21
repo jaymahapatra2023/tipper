@@ -135,6 +135,36 @@ export class StaffService {
     return { payouts, total, page, limit };
   }
 
+  async getPayoutSummary(userId: string) {
+    const staffMember = await this.getStaffMember(userId);
+
+    const [pendingEarnings, totalPaidOut, lastPayout] = await Promise.all([
+      prisma.tipDistribution.aggregate({
+        where: {
+          staffMemberId: staffMember.id,
+          payoutId: null,
+          tip: { status: 'succeeded' },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.payout.aggregate({
+        where: { staffMemberId: staffMember.id, status: 'completed' },
+        _sum: { amount: true },
+      }),
+      prisma.payout.findFirst({
+        where: { staffMemberId: staffMember.id, status: 'completed' },
+        orderBy: { processedAt: 'desc' },
+      }),
+    ]);
+
+    return {
+      pendingEarnings: pendingEarnings._sum.amount ?? 0,
+      totalPaidOut: totalPaidOut._sum.amount ?? 0,
+      lastPayoutDate: lastPayout?.processedAt?.toISOString(),
+      lastPayoutAmount: lastPayout?.amount,
+    };
+  }
+
   // Stripe Connect onboarding
   async createStripeOnboardingLink(userId: string, returnUrl: string) {
     if (!stripe) throw new BadRequestError('Stripe not configured');

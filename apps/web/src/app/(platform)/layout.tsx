@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/shared/sidebar';
 const platformNav = [
   { label: 'Hotels', href: '/platform-hotels' },
   { label: 'Analytics', href: '/platform-analytics' },
+  { label: 'Payouts', href: '/platform-payouts' },
   { label: 'Settings', href: '/platform-settings' },
 ];
 
