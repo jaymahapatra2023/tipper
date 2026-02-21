@@ -58,11 +58,11 @@ export default function StaffPayoutsPage() {
               description="Your payout history will appear here"
             />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-1">
               {payouts.map((p) => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0"
+                  className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                 >
                   <div>
                     <p className="font-medium">{formatCurrency(p.amount, p.currency)}</p>

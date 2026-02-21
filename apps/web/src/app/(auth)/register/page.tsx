@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema, type RegisterInput } from '@tipper/shared';
+import { ShieldCheck, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,17 +50,18 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-br from-muted/30 via-background to-muted/30">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-surface bg-mesh">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-3xl font-bold tracking-tight text-primary">
             Tipper
           </Link>
           <p className="text-sm text-muted-foreground mt-1">Cashless tipping for modern hotels</p>
+          <div className="mx-auto mt-3 h-px w-12 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
         </div>
 
-        <Card className="overflow-hidden">
-          <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <Card className="overflow-hidden shadow-[0_4px_12px_-2px_rgba(0,0,0,0.08)]">
+          <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="text-center">
             <CardTitle>Create Account</CardTitle>
             <CardDescription>Get started with Tipper</CardDescription>
@@ -116,6 +118,17 @@ export default function RegisterPage() {
             </p>
           </CardFooter>
         </Card>
+
+        <div className="mt-6 flex items-center justify-center gap-6 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Secure login
+          </span>
+          <span className="flex items-center gap-1.5">
+            <Lock className="h-3.5 w-3.5" />
+            Encrypted
+          </span>
+        </div>
       </div>
     </div>
   );

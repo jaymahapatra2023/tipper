@@ -100,11 +100,11 @@ export default function AdminStaffPage() {
               <Button onClick={() => setShowForm(true)}>Add Staff</Button>
             </EmptyState>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-1">
               {staff.map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0 hover:bg-muted/50 transition-colors rounded-md px-2 -mx-2"
+                  className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                 >
                   <div>
                     <p className="font-medium">{s.user.name}</p>

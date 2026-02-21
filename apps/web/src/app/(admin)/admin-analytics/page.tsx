@@ -71,40 +71,54 @@ export default function AdminAnalyticsPage() {
         data && (
           <>
             <div className="grid gap-4 md:grid-cols-4">
-              <Card>
+              <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Total Tips</CardTitle>
-                  <Receipt className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <Receipt className="h-4 w-4" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{data.totalTips}</p>
+                  <p className="text-3xl font-bold tracking-tight">{data.totalTips}</p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Gross Amount</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <DollarSign className="h-4 w-4" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{formatCurrency(data.totalAmount)}</p>
+                  <p className="text-3xl font-bold tracking-tight">
+                    {formatCurrency(data.totalAmount)}
+                  </p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Net Amount</CardTitle>
-                  <Wallet className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                    <Wallet className="h-4 w-4" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{formatCurrency(data.netAmount)}</p>
+                  <p className="text-3xl font-bold tracking-tight">
+                    {formatCurrency(data.netAmount)}
+                  </p>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="card-hover">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm text-muted-foreground">Average Tip</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                    <TrendingUp className="h-4 w-4" />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-2xl font-bold">{formatCurrency(data.averageTip)}</p>
+                  <p className="text-3xl font-bold tracking-tight">
+                    {formatCurrency(data.averageTip)}
+                  </p>
                 </CardContent>
               </Card>
             </div>
@@ -121,9 +135,12 @@ export default function AdminAnalyticsPage() {
                     description="Try adjusting the date range"
                   />
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {data.tipsByRoom.map((r) => (
-                      <div key={r.roomNumber} className="flex items-center justify-between">
+                      <div
+                        key={r.roomNumber}
+                        className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
+                      >
                         <span>Room {r.roomNumber}</span>
                         <span className="font-medium">
                           {formatCurrency(r.total)} ({r.count})

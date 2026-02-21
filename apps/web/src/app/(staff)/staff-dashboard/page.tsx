@@ -39,7 +39,7 @@ export default function StaffDashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="overflow-hidden border-primary/20 bg-primary/5">
+        <Card className="overflow-hidden border-primary/20 bg-primary/5 card-hover">
           <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -48,27 +48,35 @@ export default function StaffDashboardPage() {
             <DollarSign className="h-5 w-5 text-primary" />
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{formatCurrency(dashboard.totalEarnings)}</p>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(dashboard.totalEarnings)}
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">This Month</CardTitle>
-            <TrendingUp className="h-5 w-5 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <TrendingUp className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(dashboard.periodEarnings)}</p>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(dashboard.periodEarnings)}
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Pending Assignments
             </CardTitle>
-            <Clock className="h-5 w-5 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <Clock className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{dashboard.pendingAssignments}</p>
+            <p className="text-3xl font-bold tracking-tight">{dashboard.pendingAssignments}</p>
           </CardContent>
         </Card>
       </div>
@@ -85,11 +93,11 @@ export default function StaffDashboardPage() {
               description="Tips will appear here as guests leave them"
             />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-1">
               {dashboard.recentTips.map((tip) => (
                 <div
                   key={tip.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0"
+                  className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">

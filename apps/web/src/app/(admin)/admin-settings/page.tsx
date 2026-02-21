@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
@@ -27,6 +27,14 @@ interface StripeStatus {
 }
 
 export default function AdminSettingsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <AdminSettingsContent />
+    </Suspense>
+  );
+}
+
+function AdminSettingsContent() {
   const searchParams = useSearchParams();
   const [hotel, setHotel] = useState<HotelData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -86,7 +94,7 @@ export default function AdminSettingsPage() {
     <div className="space-y-8">
       <PageHeader title="Hotel Settings" description="Configure your hotel's tipping preferences" />
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Stripe Connect</CardTitle>
@@ -127,7 +135,7 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Tip Configuration</CardTitle>
@@ -180,7 +188,7 @@ export default function AdminSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Tip Pooling</CardTitle>

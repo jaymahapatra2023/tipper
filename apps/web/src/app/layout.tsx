@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Outfit, Sora } from 'next/font/google';
 import { AuthProvider } from '@/hooks/use-auth';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const outfit = Outfit({ subsets: ['latin'], variable: '--font-sans' });
+const sora = Sora({ subsets: ['latin'], variable: '--font-display' });
 
 export const metadata: Metadata = {
   title: 'Tipper - Digital Tipping for Hotel Staff',
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${outfit.variable} ${sora.variable}`}>
       <body className="min-h-screen bg-background antialiased">
         <AuthProvider>{children}</AuthProvider>
       </body>

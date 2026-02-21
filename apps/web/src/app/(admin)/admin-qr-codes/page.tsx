@@ -54,11 +54,11 @@ export default function AdminQrCodesPage() {
               description="Add rooms first, then generate QR codes"
             />
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-1">
               {rooms.map((room) => (
                 <div
                   key={room.id}
-                  className="flex items-center justify-between border-b pb-4 last:border-0 hover:bg-muted/50 transition-colors rounded-md px-2 -mx-2"
+                  className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
                 >
                   <div>
                     <p className="font-medium">Room {room.roomNumber}</p>

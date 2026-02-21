@@ -119,7 +119,7 @@ export default function AdminRoomsPage() {
                   {floorRooms.map((room) => (
                     <div
                       key={room.id}
-                      className="flex items-center justify-between rounded-lg border p-3"
+                      className="flex items-center justify-between rounded-xl border-border/60 border p-4 transition-all hover:shadow-sm"
                     >
                       <div>
                         <p className="font-medium">Room {room.roomNumber}</p>

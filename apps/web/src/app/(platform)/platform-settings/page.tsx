@@ -41,7 +41,7 @@ export default function PlatformSettingsPage() {
     <div className="space-y-8">
       <PageHeader title="Platform Settings" description="Configure platform-wide settings" />
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Fee Configuration</CardTitle>

@@ -34,49 +34,63 @@ export default function PlatformAnalyticsPage() {
       <PageHeader title="Platform Analytics" description="Overview of platform-wide metrics" />
 
       <div className="grid gap-4 md:grid-cols-5">
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm text-muted-foreground">Active Hotels</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+              <Building2 className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{data?.totalHotels || 0}</p>
+            <p className="text-3xl font-bold tracking-tight">{data?.totalHotels || 0}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm text-muted-foreground">Total Tips</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+              <Receipt className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{data?.totalTips || 0}</p>
+            <p className="text-3xl font-bold tracking-tight">{data?.totalTips || 0}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm text-muted-foreground">Total Volume</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+              <DollarSign className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(data?.totalVolume || 0)}</p>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(data?.totalVolume || 0)}
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm text-muted-foreground">Platform Revenue</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+              <Wallet className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{formatCurrency(data?.totalRevenue || 0)}</p>
+            <p className="text-3xl font-bold tracking-tight">
+              {formatCurrency(data?.totalRevenue || 0)}
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="card-hover">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm text-muted-foreground">Last 30 Days</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+              <TrendingUp className="h-4 w-4" />
+            </div>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">{data?.last30DaysTips || 0} tips</p>
+            <p className="text-3xl font-bold tracking-tight">{data?.last30DaysTips || 0} tips</p>
           </CardContent>
         </Card>
       </div>

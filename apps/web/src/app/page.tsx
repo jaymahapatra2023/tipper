@@ -1,47 +1,85 @@
 import Link from 'next/link';
-import { QrCode, HandCoins, CreditCard } from 'lucide-react';
+import { QrCode, HandCoins, CreditCard, Sparkles, Hotel, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LandingNav } from '@/components/shared/landing-nav';
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+    <div className="flex min-h-screen flex-col overflow-hidden">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/75 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <h1 className="text-2xl font-bold tracking-tight text-primary">Tipper</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight text-primary">
+            Tipper
+          </h1>
           <LandingNav />
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4">
-        <div className="max-w-2xl text-center">
-          <div className="mb-6 inline-flex items-center rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+      <main className="relative flex flex-1 flex-col items-center justify-center bg-mesh px-4 py-14">
+        <div className="pointer-events-none absolute -left-24 top-12 h-64 w-64 rounded-full bg-primary/15 blur-3xl" />
+        <div className="pointer-events-none absolute -right-24 bottom-8 h-64 w-64 rounded-full bg-emerald-300/20 blur-3xl" />
+
+        <div className="relative max-w-4xl text-center">
+          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/8 px-4 py-1.5 text-sm font-medium text-primary ring-1 ring-primary/20">
+            <Sparkles className="h-4 w-4" />
             Cashless tipping for modern hotels
           </div>
-          <h2 className="text-4xl font-bold tracking-tight sm:text-6xl">
-            Digital Tipping for <span className="text-primary">Hotel Staff</span>
+          <h2 className="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-6xl">
+            Delight Guests.
+            <br />
+            Reward Housekeeping <span className="text-primary">Instantly.</span>
           </h2>
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            Show your appreciation for hotel cleaning staff with easy, cashless tips. Scan the QR
-            code in your room, choose an amount, and tip securely.
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+            Turn every room into a secure digital tipping point. Guests scan, select, and pay in
+            seconds. Staff gets transparent payouts. Hotels get zero-cash operations.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-x-6">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <Link href="/register">
               <Button variant="gold" size="xl">
-                Get Started
+                Launch for Your Hotel
               </Button>
             </Link>
             <Link href="/login">
               <Button variant="outline" size="lg">
-                Hotel Admin Login
+                Admin Login
               </Button>
             </Link>
           </div>
+
+          <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="group glass-panel rounded-2xl p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
+                <Hotel className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold">Hotel-Ready Setup</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Room-based QR activation, role-based access, and clean admin workflows.
+              </p>
+            </div>
+            <div className="group glass-panel rounded-2xl p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 transition-transform duration-200 group-hover:scale-110">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold">Secure by Default</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Stripe-powered checkout, tokenized payments, and encrypted transaction paths.
+              </p>
+            </div>
+            <div className="group glass-panel rounded-2xl p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-700 transition-transform duration-200 group-hover:scale-110">
+                <HandCoins className="h-6 w-6" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold">Staff-First Payouts</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Transparent earnings, payout status visibility, and optional pooling support.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-20 grid max-w-4xl grid-cols-1 gap-8 sm:grid-cols-3">
-          <div className="rounded-2xl border bg-card p-6 transition-shadow hover:shadow-md text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="mt-16 grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="group glass-panel rounded-2xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               <QrCode className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-lg font-semibold">Scan QR Code</h3>
@@ -49,8 +87,8 @@ export default function HomePage() {
               Find the QR code in your hotel room and scan it with your phone
             </p>
           </div>
-          <div className="rounded-2xl border bg-card p-6 transition-shadow hover:shadow-md text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="group glass-panel rounded-2xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               <HandCoins className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-lg font-semibold">Choose Amount</h3>
@@ -58,8 +96,8 @@ export default function HomePage() {
               Select a suggested amount or enter a custom tip
             </p>
           </div>
-          <div className="rounded-2xl border bg-card p-6 transition-shadow hover:shadow-md text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="group glass-panel rounded-2xl p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-200 group-hover:scale-110">
               <CreditCard className="h-7 w-7" />
             </div>
             <h3 className="mt-4 text-lg font-semibold">Pay Securely</h3>
@@ -70,8 +108,8 @@ export default function HomePage() {
         </div>
       </main>
 
-      <footer className="border-t bg-muted/30 py-8 text-center text-sm text-muted-foreground">
-        <p>Tipper - Digital Tipping Platform</p>
+      <footer className="border-t border-border/60 bg-card/55 py-8 text-center text-sm text-muted-foreground backdrop-blur">
+        <p>&copy; {new Date().getFullYear()} Tipper. Digital Tipping Platform.</p>
       </footer>
     </div>
   );

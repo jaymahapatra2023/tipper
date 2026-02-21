@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/shared/page-header';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
 
 interface StripeStatus {
   stripeAccountId: string | null;
@@ -14,6 +15,14 @@ interface StripeStatus {
 }
 
 export default function StaffSettingsPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <StaffSettingsContent />
+    </Suspense>
+  );
+}
+
+function StaffSettingsContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const [poolOptIn, setPoolOptIn] = useState(false);
@@ -56,7 +65,7 @@ export default function StaffSettingsPage() {
     <div className="space-y-8">
       <PageHeader title="Settings" description="Manage your profile and payout preferences" />
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Profile</CardTitle>
@@ -71,7 +80,7 @@ export default function StaffSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Tip Pooling</CardTitle>
@@ -89,7 +98,7 @@ export default function StaffSettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden card-hover">
         <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
         <CardHeader>
           <CardTitle>Bank Account</CardTitle>

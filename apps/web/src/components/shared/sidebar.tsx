@@ -32,14 +32,16 @@ export function Sidebar({ items, title }: SidebarProps) {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-card">
-      <div className="h-0.5 bg-gradient-to-r from-primary via-primary/50 to-transparent" />
+    <aside className="glass-panel flex h-screen w-64 flex-col border-r border-border/60 bg-gradient-to-b from-card to-slate-50/80">
+      <div className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent" />
 
       <div className="p-6">
-        <Link href="/" className="text-xl font-bold tracking-tight text-primary">
+        <Link href="/" className="font-display text-2xl font-semibold tracking-tight text-primary">
           Tipper
         </Link>
-        <p className="text-sm text-muted-foreground mt-1">{title}</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70 mt-1">
+          {title}
+        </p>
       </div>
 
       <nav className="flex-1 space-y-1 px-3">
@@ -51,10 +53,10 @@ export function Sidebar({ items, title }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors border-l-2',
+                'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all border-l-2',
                 isActive
-                  ? 'border-primary bg-primary/10 text-primary font-semibold'
-                  : 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground',
+                  ? 'border-primary bg-primary/12 text-primary font-semibold shadow-sm'
+                  : 'border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:-translate-y-0.5',
               )}
             >
               {Icon && <Icon className="h-4 w-4" />}
@@ -66,7 +68,7 @@ export function Sidebar({ items, title }: SidebarProps) {
 
       <div className="border-t p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-primary text-sm font-medium ring-1 ring-primary/10">
             {getInitials(user?.name)}
           </div>
           <div className="min-w-0">

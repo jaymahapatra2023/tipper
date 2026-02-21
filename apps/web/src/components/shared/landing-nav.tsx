@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 
@@ -20,20 +19,21 @@ function getDashboardPath(role: string) {
 
 export function LandingNav() {
   const { user, isLoading, logout } = useAuth();
-  const router = useRouter();
 
   if (isLoading) return null;
 
   if (user) {
     const dashboardPath = getDashboardPath(user.role);
     return (
-      <nav className="flex items-center gap-4">
+      <nav className="flex items-center gap-3">
         {dashboardPath && (
           <Link href={dashboardPath}>
             <Button variant="ghost">Dashboard</Button>
           </Link>
         )}
-        <span className="text-sm text-muted-foreground">{user.name}</span>
+        <span className="hidden rounded-full border border-border/70 bg-card/70 px-3 py-1 text-sm text-muted-foreground md:inline">
+          {user.name}
+        </span>
         <Button variant="outline" onClick={logout}>
           Log Out
         </Button>
@@ -42,7 +42,7 @@ export function LandingNav() {
   }
 
   return (
-    <nav className="flex gap-4">
+    <nav className="flex gap-2">
       <Link href="/login">
         <Button variant="ghost">Log In</Button>
       </Link>
