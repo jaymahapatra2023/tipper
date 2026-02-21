@@ -493,6 +493,15 @@ model ShiftTemplateEntry {
   @@map("shift_template_entries")
 }
 
+model StripeEvent {
+  id        String   @id
+  type      String
+  processed Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("stripe_events")
+}
+
 model ShiftSwapRequest {
   id              String            @id @default(uuid())
   originalShiftId String            @map("original_shift_id")

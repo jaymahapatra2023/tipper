@@ -222,6 +222,9 @@ export class TipService {
       if (staffIds.length === 0) return;
     }
 
+    // Build distribution list, then create all in a single transaction
+    const distributions: { staffMemberId: string; amount: number }[] = [];
+
     if (tip.hotel.poolingEnabled) {
       // Pool among opted-in staff
       const poolMembers = await prisma.staffMember.findMany({
@@ -234,25 +237,19 @@ export class TipService {
         // Weighted distribution based on poolWeight
         const totalWeight = poolMembers.reduce((sum, m) => sum + m.poolWeight, 0);
         let distributed = 0;
-        const shares: { id: string; amount: number; weight: number }[] = [];
 
         for (const member of poolMembers) {
           const amount = Math.floor(tip.netAmount * (member.poolWeight / totalWeight));
-          shares.push({ id: member.id, amount, weight: member.poolWeight });
+          distributions.push({ staffMemberId: member.id, amount });
           distributed += amount;
         }
 
         // Give remainder to highest-weighted member
         const remainder = tip.netAmount - distributed;
         if (remainder > 0) {
-          const highest = shares.reduce((a, b) => (a.weight >= b.weight ? a : b));
-          highest.amount += remainder;
-        }
-
-        for (const share of shares) {
-          await prisma.tipDistribution.create({
-            data: { tipId, staffMemberId: share.id, amount: share.amount },
-          });
+          const highest = poolMembers.reduce((a, b) => (a.poolWeight >= b.poolWeight ? a : b));
+          const entry = distributions.find((d) => d.staffMemberId === highest.id);
+          if (entry) entry.amount += remainder;
         }
       } else {
         // Equal split (default)
@@ -260,12 +257,9 @@ export class TipService {
         const remainder = tip.netAmount - perPerson * poolMembers.length;
 
         for (let i = 0; i < poolMembers.length; i++) {
-          await prisma.tipDistribution.create({
-            data: {
-              tipId,
-              staffMemberId: poolMembers[i].id,
-              amount: perPerson + (i === 0 ? remainder : 0),
-            },
+          distributions.push({
+            staffMemberId: poolMembers[i].id,
+            amount: perPerson + (i === 0 ? remainder : 0),
           });
         }
       }
@@ -275,15 +269,21 @@ export class TipService {
       const remainder = tip.netAmount - perPerson * staffIds.length;
 
       for (let i = 0; i < staffIds.length; i++) {
-        await prisma.tipDistribution.create({
-          data: {
-            tipId,
-            staffMemberId: staffIds[i],
-            amount: perPerson + (i === 0 ? remainder : 0),
-          },
+        distributions.push({
+          staffMemberId: staffIds[i],
+          amount: perPerson + (i === 0 ? remainder : 0),
         });
       }
     }
+
+    // Create all distributions atomically
+    await prisma.$transaction(
+      distributions.map((d) =>
+        prisma.tipDistribution.create({
+          data: { tipId, staffMemberId: d.staffMemberId, amount: d.amount },
+        }),
+      ),
+    );
   }
 
   private async notifyStaffOfTip(tipId: string) {

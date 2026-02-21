@@ -27,6 +27,15 @@ router.post('/stripe', async (req: Request, res: Response, next: NextFunction) =
   }
 
   try {
+    // Idempotency check: skip already-processed events
+    const existing = await prisma.stripeEvent.findUnique({ where: { id: event.id } });
+    if (existing) {
+      return res.json({ received: true, duplicate: true });
+    }
+
+    // Record event before processing to prevent concurrent duplicates
+    await prisma.stripeEvent.create({ data: { id: event.id, type: event.type } });
+
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object;
