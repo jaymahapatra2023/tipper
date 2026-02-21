@@ -166,6 +166,7 @@ model Hotel {
   shifts       Shift[]
   shiftTemplates ShiftTemplate[]
 
+  @@index([status])
   @@map("hotels")
 }
 
@@ -215,6 +216,7 @@ model QrCode {
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([code])
+  @@index([roomId, status])
   @@map("qr_codes")
 }
 
@@ -235,7 +237,8 @@ model StaffMember {
   assignments       RoomAssignment[]
   tipDistributions  TipDistribution[]
   payouts           Payout[]
-  shifts            Shift[]
+  shifts                Shift[]
+  shiftTemplateEntries  ShiftTemplateEntry[]
   swapRequestsInitiated ShiftSwapRequest[] @relation("SwapRequester")
   swapRequestsTargeted  ShiftSwapRequest[] @relation("SwapTarget")
 
@@ -284,8 +287,9 @@ model Tip {
   locationDistance    Float?    @map("location_distance")
   stripePaymentIntentId String? @unique @map("stripe_payment_intent_id")
   status             TipStatus @default(pending)
-  receiptToken       String?   @unique @map("receipt_token")
-  receiptSentAt      DateTime? @map("receipt_sent_at")
+  receiptToken          String?   @unique @map("receipt_token")
+  receiptTokenExpiresAt DateTime? @map("receipt_token_expires_at")
+  receiptSentAt         DateTime? @map("receipt_sent_at")
   paidAt             DateTime? @map("paid_at")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
@@ -298,6 +302,8 @@ model Tip {
   @@index([hotelId, createdAt])
   @@index([roomId, createdAt])
   @@index([status])
+  @@index([guestId])
+  @@index([createdAt])
   @@map("tips")
 }
 
@@ -488,7 +494,8 @@ model ShiftTemplateEntry {
   endMinute     Int       @default(0) @map("end_minute")
   roomIds       String[]  @map("room_ids")
 
-  template ShiftTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  template    ShiftTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  staffMember StaffMember   @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
 
   @@map("shift_template_entries")
 }

@@ -5,6 +5,7 @@ import {
   platformSettingsSchema,
   hotelApprovalSchema,
   auditLogQuerySchema,
+  paginationSchema,
 } from '@tipper/shared';
 import type { AuditLogQueryInput } from '@tipper/shared';
 
@@ -19,21 +20,24 @@ const router: Router = Router();
 
 router.use(authenticate, authorize(UserRole.PLATFORM_ADMIN));
 
-router.get('/hotels', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const status = req.query.status as string | undefined;
-    const result = await platformService.getHotels(page, limit, status);
-    sendSuccess(res, result.hotels, 200, {
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/hotels',
+  validate(paginationSchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page, limit } = req.query as unknown as { page: number; limit: number };
+      const status = req.query.status as string | undefined;
+      const result = await platformService.getHotels(page, limit, status);
+      sendSuccess(res, result.hotels, 200, {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.put('/hotels/:id/approve', async (req: Request, res: Response, next: NextFunction) => {
   try {

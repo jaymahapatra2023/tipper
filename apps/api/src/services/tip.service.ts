@@ -72,6 +72,7 @@ export class TipService {
 
     // Create tip record
     const receiptToken = crypto.randomBytes(24).toString('hex');
+    const receiptTokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
     const tip = await prisma.tip.create({
       data: {
         hotelId: hotel.id,
@@ -93,6 +94,7 @@ export class TipService {
         locationVerified,
         locationDistance,
         receiptToken,
+        receiptTokenExpiresAt,
         status: 'pending',
       },
     });
@@ -441,6 +443,10 @@ export class TipService {
     });
 
     if (!tip) throw new NotFoundError('Receipt');
+
+    if (tip.receiptTokenExpiresAt && tip.receiptTokenExpiresAt < new Date()) {
+      throw new BadRequestError('Receipt link has expired');
+    }
 
     const hotelAddress = [tip.hotel.address, tip.hotel.city, tip.hotel.state, tip.hotel.zipCode]
       .filter(Boolean)

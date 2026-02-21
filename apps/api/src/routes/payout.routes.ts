@@ -1,30 +1,34 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { UserRole } from '@tipper/shared';
+import { UserRole, paginationSchema } from '@tipper/shared';
 
 import { payoutService } from '../services/payout.service';
 import { authenticate, authorize } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { sendSuccess } from '../utils/response';
 
 const router: Router = Router();
 
 router.use(authenticate, authorize(UserRole.PLATFORM_ADMIN));
 
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const status = req.query.status as string | undefined;
-    const result = await payoutService.getAllPayouts(page, limit, status);
-    sendSuccess(res, result.payouts, 200, {
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/',
+  validate(paginationSchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page, limit } = req.query as unknown as { page: number; limit: number };
+      const status = req.query.status as string | undefined;
+      const result = await payoutService.getAllPayouts(page, limit, status);
+      sendSuccess(res, result.payouts, 200, {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get('/analytics', async (_req: Request, res: Response, next: NextFunction) => {
   try {

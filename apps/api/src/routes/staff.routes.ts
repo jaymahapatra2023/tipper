@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { UserRole } from '@tipper/shared';
+import { UserRole, paginationSchema } from '@tipper/shared';
 
 import { staffService } from '../services/staff.service';
 import { authenticate, authorize } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import { sendSuccess } from '../utils/response';
 
 const router: Router = Router();
@@ -19,20 +20,23 @@ router.get('/dashboard', async (req: Request, res: Response, next: NextFunction)
   }
 });
 
-router.get('/tips', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const result = await staffService.getTips(req.user!.userId, page, limit);
-    sendSuccess(res, result.tips, 200, {
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/tips',
+  validate(paginationSchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page, limit } = req.query as unknown as { page: number; limit: number };
+      const result = await staffService.getTips(req.user!.userId, page, limit);
+      sendSuccess(res, result.tips, 200, {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get('/assignments', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -99,19 +103,22 @@ router.get('/payouts/summary', async (req: Request, res: Response, next: NextFun
   }
 });
 
-router.get('/payouts', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const result = await staffService.getPayouts(req.user!.userId, page, limit);
-    sendSuccess(res, result.payouts, 200, {
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/payouts',
+  validate(paginationSchema, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page, limit } = req.query as unknown as { page: number; limit: number };
+      const result = await staffService.getPayouts(req.user!.userId, page, limit);
+      sendSuccess(res, result.payouts, 200, {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export { router as staffRoutes };

@@ -52,10 +52,20 @@ export class AuthService {
     return { user, ...tokens };
   }
 
+  // Dummy hash used for constant-time comparison when user not found (prevents timing attacks)
+  private static readonly DUMMY_HASH =
+    '$2a$12$000000000000000000000uGbHAMIr4pG.bDaXMVOnVeHOsfyXC0S';
+
   async login(email: string, password: string, ipAddress?: string) {
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.passwordHash) {
+
+    // Always run bcrypt.compare to prevent timing-based email enumeration
+    const hashToCompare = user?.passwordHash || AuthService.DUMMY_HASH;
+    const valid = await bcrypt.compare(password, hashToCompare);
+
+    if (!user || !user.passwordHash || !valid) {
       logAudit({
+        userId: user?.id,
         action: 'login_failure',
         entityType: 'auth',
         metadata: { email, reason: 'invalid_credentials' },
@@ -72,18 +82,6 @@ export class AuthService {
         ipAddress,
       });
       throw new UnauthorizedError('Account is deactivated');
-    }
-
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
-      logAudit({
-        userId: user.id,
-        action: 'login_failure',
-        entityType: 'auth',
-        metadata: { reason: 'invalid_credentials' },
-        ipAddress,
-      });
-      throw new UnauthorizedError('Invalid email or password');
     }
 
     // Check if MFA is enabled
