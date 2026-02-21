@@ -7,7 +7,7 @@ import { tipLimiter } from '../middleware/rateLimiter';
 import { sendSuccess } from '../utils/response';
 import { tipCreateSchema, tipReceiptSchema } from '@tipper/shared';
 
-const router = Router();
+const router: Router = Router();
 
 router.post(
   '/',
@@ -25,7 +25,7 @@ router.post(
 
 router.get('/:id/status', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await tipService.getTipStatus(req.params.id);
+    const result = await tipService.getTipStatus(req.params.id as string);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

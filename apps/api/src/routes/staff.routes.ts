@@ -6,7 +6,7 @@ import { staffService } from '../services/staff.service';
 import { authenticate, authorize } from '../middleware/auth';
 import { sendSuccess } from '../utils/response';
 
-const router = Router();
+const router: Router = Router();
 
 router.use(authenticate, authorize(UserRole.STAFF));
 
@@ -45,7 +45,7 @@ router.get('/assignments', async (req: Request, res: Response, next: NextFunctio
 
 router.post('/assignments/:id/claim', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await staffService.claimAssignment(req.user!.userId, req.params.id);
+    const result = await staffService.claimAssignment(req.user!.userId, req.params.id as string);
     sendSuccess(res, result);
   } catch (err) {
     next(err);

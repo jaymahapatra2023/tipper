@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -15,7 +15,7 @@ import { adminRoutes } from './routes/admin.routes';
 import { platformRoutes } from './routes/platform.routes';
 import { webhookRoutes } from './routes/webhook.routes';
 
-const app = express();
+const app: Express = express();
 
 // Stripe webhooks need raw body
 app.use('/api/v1/webhooks', express.raw({ type: 'application/json' }), webhookRoutes);

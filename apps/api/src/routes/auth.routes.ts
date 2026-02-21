@@ -18,7 +18,7 @@ import {
   mfaSetupVerifySchema,
 } from '@tipper/shared';
 
-const router = Router();
+const router: Router = Router();
 
 router.post(
   '/register',

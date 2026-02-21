@@ -5,7 +5,7 @@ import { stripe } from '../config/stripe';
 import { env } from '../config/env';
 import { tipService } from '../services/tip.service';
 
-const router = Router();
+const router: Router = Router();
 
 router.post('/stripe', async (req: Request, res: Response, next: NextFunction) => {
   if (!stripe || !env.STRIPE_WEBHOOK_SECRET) {

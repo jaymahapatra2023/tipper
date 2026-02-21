@@ -14,7 +14,7 @@ import { authenticate, authorize } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { sendSuccess } from '../utils/response';
 
-const router = Router();
+const router: Router = Router();
 
 router.use(authenticate, authorize(UserRole.HOTEL_ADMIN));
 
@@ -68,7 +68,10 @@ router.post(
   '/staff/:id/reset-password',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await adminService.resetStaffPassword(req.user!.userId, req.params.id);
+      const result = await adminService.resetStaffPassword(
+        req.user!.userId,
+        req.params.id as string,
+      );
       sendSuccess(res, result);
     } catch (err) {
       next(err);
@@ -78,7 +81,7 @@ router.post(
 
 router.delete('/staff/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await adminService.deactivateStaff(req.user!.userId, req.params.id);
+    await adminService.deactivateStaff(req.user!.userId, req.params.id as string);
     sendSuccess(res, { message: 'Staff member deactivated' });
   } catch (err) {
     next(err);
@@ -119,7 +122,7 @@ router.post(
 
 router.delete('/rooms/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await adminService.deleteRoom(req.user!.userId, req.params.id);
+    await adminService.deleteRoom(req.user!.userId, req.params.id as string);
     sendSuccess(res, { message: 'Room deactivated' });
   } catch (err) {
     next(err);
@@ -129,7 +132,7 @@ router.delete('/rooms/:id', async (req: Request, res: Response, next: NextFuncti
 // QR Codes
 router.get('/rooms/:id/qr', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const qr = await qrService.getQrCodeForRoom(req.params.id);
+    const qr = await qrService.getQrCodeForRoom(req.params.id as string);
     sendSuccess(res, qr);
   } catch (err) {
     next(err);
@@ -139,7 +142,7 @@ router.get('/rooms/:id/qr', async (req: Request, res: Response, next: NextFuncti
 router.post('/rooms/:id/qr/regenerate', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const result = await qrService.regenerate(req.params.id, appUrl);
+    const result = await qrService.regenerate(req.params.id as string, appUrl);
     sendSuccess(res, result);
   } catch (err) {
     next(err);
