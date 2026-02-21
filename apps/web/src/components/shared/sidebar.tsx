@@ -32,14 +32,30 @@ export function Sidebar({ items, title }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
+  const hasBranding = !!(user?.hotel?.primaryColor || user?.hotel?.secondaryColor);
+  const accentColor = user?.hotel?.primaryColor;
+  const bgColor = user?.hotel?.secondaryColor;
+
   return (
-    <aside className="glass-panel flex h-screen w-64 flex-col border-r border-border/60 bg-gradient-to-b from-card to-slate-50/80">
+    <aside
+      className={cn(
+        'flex h-screen w-64 flex-col border-r',
+        hasBranding
+          ? 'border-white/10'
+          : 'glass-panel border-border/60 bg-gradient-to-b from-card to-slate-50/80',
+      )}
+      style={
+        hasBranding
+          ? { background: `linear-gradient(to bottom, ${bgColor}, ${bgColor}ee)` }
+          : undefined
+      }
+    >
       <div
         className="h-0.5 bg-gradient-to-r from-primary via-primary/60 to-transparent"
         style={
-          user?.hotel?.primaryColor
+          accentColor
             ? {
-                background: `linear-gradient(to right, ${user.hotel.primaryColor}, ${user.hotel.primaryColor}80, transparent)`,
+                background: `linear-gradient(to right, ${accentColor}, ${accentColor}80, transparent)`,
               }
             : undefined
         }
@@ -51,17 +67,25 @@ export function Sidebar({ items, title }: SidebarProps) {
             <img
               src={user.hotel.logoUrl}
               alt={user.hotel.name}
-              className="h-8 w-8 rounded-full object-cover ring-1 ring-border/40"
+              className="h-8 w-8 rounded-full object-cover ring-1 ring-white/20"
             />
           )}
           <div>
             <Link
               href="/"
-              className="font-display text-2xl font-semibold tracking-tight text-primary"
+              className={cn(
+                'font-display text-2xl font-semibold tracking-tight',
+                hasBranding ? 'text-white' : 'text-primary',
+              )}
             >
               {user?.hotel?.name || 'Tipper'}
             </Link>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70 mt-1">
+            <p
+              className={cn(
+                'text-xs font-medium uppercase tracking-wider mt-1',
+                hasBranding ? 'text-white/60' : 'text-muted-foreground/70',
+              )}
+            >
               {title}
             </p>
           </div>
@@ -79,10 +103,19 @@ export function Sidebar({ items, title }: SidebarProps) {
               href={item.href}
               className={cn(
                 'flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-all border-l-2',
-                isActive
-                  ? 'border-primary bg-primary/12 text-primary font-semibold shadow-sm'
-                  : 'border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:-translate-y-0.5',
+                hasBranding
+                  ? isActive
+                    ? 'border-white bg-white/15 text-white font-semibold shadow-sm'
+                    : 'border-transparent text-white/70 hover:bg-white/10 hover:text-white hover:-translate-y-0.5'
+                  : isActive
+                    ? 'border-primary bg-primary/12 text-primary font-semibold shadow-sm'
+                    : 'border-transparent text-muted-foreground hover:bg-muted/70 hover:text-foreground hover:-translate-y-0.5',
               )}
+              style={
+                hasBranding && isActive && accentColor
+                  ? { borderColor: accentColor, color: accentColor }
+                  : undefined
+              }
             >
               {Icon && <Icon className="h-4 w-4" />}
               {item.label}
@@ -91,17 +124,41 @@ export function Sidebar({ items, title }: SidebarProps) {
         })}
       </nav>
 
-      <div className="border-t p-4">
+      <div className={cn('border-t p-4', hasBranding ? 'border-white/10' : '')}>
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10 text-primary text-sm font-medium ring-1 ring-primary/10">
+          <div
+            className={cn(
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-medium ring-1',
+              hasBranding
+                ? 'bg-white/15 text-white ring-white/20'
+                : 'bg-gradient-to-br from-primary/20 to-primary/10 text-primary ring-primary/10',
+            )}
+          >
             {getInitials(user?.name)}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            <p className={cn('text-sm font-medium truncate', hasBranding && 'text-white')}>
+              {user?.name}
+            </p>
+            <p
+              className={cn(
+                'text-xs truncate',
+                hasBranding ? 'text-white/60' : 'text-muted-foreground',
+              )}
+            >
+              {user?.email}
+            </p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={logout}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            'mt-2 w-full',
+            hasBranding && 'text-white/80 hover:text-white hover:bg-white/10',
+          )}
+          onClick={logout}
+        >
           Log Out
         </Button>
       </div>
