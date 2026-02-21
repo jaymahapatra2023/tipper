@@ -6,10 +6,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { CheckCircle2, ShieldCheck, FileText, Mail } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, FileText, Mail, AlertTriangle, MapPin } from 'lucide-react';
 import { api } from '@/lib/api';
 import { stripePromise } from '@/lib/stripe';
 import { formatCurrency } from '@/lib/utils';
+import { requestGeolocation, verifyLocationClient, formatDistance } from '@/lib/geolocation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -140,6 +141,15 @@ export default function TipPage() {
   const [hotelInfo, setHotelInfo] = useState<QrResolveResponse | null>(null);
   const [confirmation, setConfirmation] = useState<TipConfirmation | null>(null);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [guestLocation, setGuestLocation] = useState<{
+    lat: number;
+    lon: number;
+    accuracy: number;
+  } | null>(null);
+  const [locationStatus, setLocationStatus] = useState<
+    'checking' | 'verified' | 'unverified' | 'disabled'
+  >('disabled');
+  const [locationWarning, setLocationWarning] = useState('');
 
   const [tipData, setTipData] = useState<{
     tipId: string;
@@ -163,11 +173,46 @@ export default function TipPage() {
   });
 
   useEffect(() => {
-    api.get<QrResolveResponse>(`/qr/${code}`).then((res) => {
+    api.get<QrResolveResponse>(`/qr/${code}`).then(async (res) => {
       if (res.success && res.data) {
         setHotelInfo(res.data);
         form.setValue('roomNumber', res.data.roomNumber);
         setStep('stayDetails');
+
+        // Request geolocation if geofence is enabled
+        if (
+          res.data.geofenceEnabled &&
+          res.data.geofenceLatitude != null &&
+          res.data.geofenceLongitude != null
+        ) {
+          setLocationStatus('checking');
+          const position = await requestGeolocation();
+          if (position) {
+            setGuestLocation({
+              lat: position.latitude,
+              lon: position.longitude,
+              accuracy: position.accuracy,
+            });
+            const result = verifyLocationClient(
+              position.latitude,
+              position.longitude,
+              res.data.geofenceLatitude,
+              res.data.geofenceLongitude,
+              res.data.geofenceRadius ?? 500,
+            );
+            if (result.verified) {
+              setLocationStatus('verified');
+            } else {
+              setLocationStatus('unverified');
+              setLocationWarning(
+                `You appear to be ${formatDistance(result.distance)} from ${res.data.hotelName}. You can still leave a tip.`,
+              );
+            }
+          } else {
+            setLocationStatus('unverified');
+            setLocationWarning('Location access was denied. You can still leave a tip.');
+          }
+        }
       } else {
         setError(res.error?.message || 'Invalid QR code');
         setStep('error');
@@ -215,6 +260,9 @@ export default function TipPage() {
       amountPerDay: data.amountPerDay,
       totalAmount: data.totalAmount,
       message: data.message || undefined,
+      guestLatitude: guestLocation?.lat,
+      guestLongitude: guestLocation?.lon,
+      guestLocationAccuracy: guestLocation?.accuracy,
     });
 
     if (res.success && res.data) {
@@ -485,6 +533,26 @@ export default function TipPage() {
             {step === 'stayDetails' && (
               <>
                 <HotelHero hotelName={hotelInfo?.hotelName ?? ''} />
+
+                {locationStatus === 'checking' && (
+                  <div className="flex items-center gap-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm text-blue-300">
+                    <MapPin className="h-4 w-4 animate-pulse" />
+                    <span>Verifying your location...</span>
+                  </div>
+                )}
+                {locationStatus === 'verified' && (
+                  <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-300">
+                    <MapPin className="h-4 w-4" />
+                    <span>Location verified</span>
+                  </div>
+                )}
+                {locationStatus === 'unverified' && (
+                  <div className="flex items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>{locationWarning}</span>
+                  </div>
+                )}
+
                 <Card>
                   <CardContent className="pt-6 space-y-4">
                     <div>

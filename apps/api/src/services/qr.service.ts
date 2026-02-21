@@ -21,6 +21,10 @@ export class QrService {
                 maxTipAmount: true,
                 currency: true,
                 status: true,
+                geofenceEnabled: true,
+                geofenceLatitude: true,
+                geofenceLongitude: true,
+                geofenceRadius: true,
               },
             },
           },
@@ -52,6 +56,10 @@ export class QrService {
       minTip: qrCode.room.hotel.minTipAmount,
       maxTip: qrCode.room.hotel.maxTipAmount,
       currency: qrCode.room.hotel.currency,
+      geofenceEnabled: qrCode.room.hotel.geofenceEnabled,
+      geofenceLatitude: qrCode.room.hotel.geofenceLatitude,
+      geofenceLongitude: qrCode.room.hotel.geofenceLongitude,
+      geofenceRadius: qrCode.room.hotel.geofenceRadius,
     };
   }
 

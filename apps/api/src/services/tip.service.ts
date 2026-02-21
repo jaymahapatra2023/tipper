@@ -7,6 +7,7 @@ import { env } from '../config/env';
 import { stripe } from '../config/stripe';
 import { emailService } from './email.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
+import { verifyGeofence } from '../utils/geolocation';
 
 export class TipService {
   async createTip(input: TipCreateInput) {
@@ -39,6 +40,34 @@ export class TipService {
     const platformFee = Math.round(input.totalAmount * (feePercent / 100));
     const netAmount = input.totalAmount - platformFee;
 
+    // Geolocation verification
+    let locationVerified = true;
+    let locationDistance: number | undefined;
+    const guestLatitude = input.guestLatitude ?? undefined;
+    const guestLongitude = input.guestLongitude ?? undefined;
+    const guestLocationAccuracy = input.guestLocationAccuracy ?? undefined;
+
+    if (
+      hotel.geofenceEnabled &&
+      hotel.geofenceLatitude != null &&
+      hotel.geofenceLongitude != null
+    ) {
+      if (guestLatitude != null && guestLongitude != null) {
+        const result = verifyGeofence(
+          guestLatitude,
+          guestLongitude,
+          hotel.geofenceLatitude,
+          hotel.geofenceLongitude,
+          hotel.geofenceRadius,
+        );
+        locationVerified = result.verified;
+        locationDistance = result.distance;
+      } else {
+        // Guest didn't send coords (denied permission)
+        locationVerified = false;
+      }
+    }
+
     // Create tip record
     const receiptToken = crypto.randomBytes(24).toString('hex');
     const tip = await prisma.tip.create({
@@ -56,6 +85,11 @@ export class TipService {
         netAmount,
         currency: hotel.currency,
         message: input.message,
+        guestLatitude,
+        guestLongitude,
+        guestLocationAccuracy,
+        locationVerified,
+        locationDistance,
         receiptToken,
         status: 'pending',
       },

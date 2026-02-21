@@ -45,6 +45,9 @@ export const tipCreateSchema = z
     amountPerDay: z.number().min(1).optional(),
     totalAmount: z.number().min(100, 'Minimum tip is $1.00'),
     message: z.string().max(500).optional(),
+    guestLatitude: z.number().min(-90).max(90).optional(),
+    guestLongitude: z.number().min(-180).max(180).optional(),
+    guestLocationAccuracy: z.number().min(0).optional(),
   })
   .refine(
     (data) => new Date(data.checkOutDate) > new Date(data.checkInDate),
@@ -91,6 +94,10 @@ export const hotelSettingsSchema = z.object({
   poolingType: z.enum(['equal', 'weighted']).optional(),
   currency: z.string().length(3).default('usd'),
   mfaRequired: z.boolean().optional(),
+  geofenceEnabled: z.boolean().optional(),
+  geofenceLatitude: z.number().min(-90).max(90).optional(),
+  geofenceLongitude: z.number().min(-180).max(180).optional(),
+  geofenceRadius: z.number().min(50).max(5000).optional(),
 });
 
 // Room schemas

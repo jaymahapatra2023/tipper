@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, MapPin } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,6 +22,10 @@ interface HotelData {
   poolingEnabled: boolean;
   poolingType: string | null;
   mfaRequired: boolean;
+  geofenceEnabled: boolean;
+  geofenceLatitude: number | null;
+  geofenceLongitude: number | null;
+  geofenceRadius: number;
 }
 
 interface StripeStatus {
@@ -81,6 +85,10 @@ function AdminSettingsContent() {
       poolingType: hotel.poolingType,
       mfaRequired: hotel.mfaRequired,
       currency: 'usd',
+      geofenceEnabled: hotel.geofenceEnabled,
+      geofenceLatitude: hotel.geofenceLatitude,
+      geofenceLongitude: hotel.geofenceLongitude,
+      geofenceRadius: hotel.geofenceRadius,
     });
     setSaving(false);
   }
@@ -299,6 +307,94 @@ function AdminSettingsContent() {
               >
                 Weighted
               </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="overflow-hidden card-hover">
+        <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Location Verification
+          </CardTitle>
+          <CardDescription>
+            Optionally verify that guests are at the hotel when tipping. This is a soft check — it
+            warns but never blocks a tip.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Enable Geofence</p>
+              <p className="text-sm text-muted-foreground">
+                Verify guest location when they leave a tip
+              </p>
+            </div>
+            <Button
+              variant={hotel.geofenceEnabled ? 'default' : 'outline'}
+              onClick={() => setHotel({ ...hotel, geofenceEnabled: !hotel.geofenceEnabled })}
+            >
+              {hotel.geofenceEnabled ? 'Enabled' : 'Disabled'}
+            </Button>
+          </div>
+          {hotel.geofenceEnabled && (
+            <div className="space-y-4 border-t pt-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>Latitude</Label>
+                  <Input
+                    type="number"
+                    step="any"
+                    placeholder="e.g. 40.7128"
+                    value={hotel.geofenceLatitude ?? ''}
+                    onChange={(e) =>
+                      setHotel({
+                        ...hotel,
+                        geofenceLatitude: e.target.value ? parseFloat(e.target.value) : null,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label>Longitude</Label>
+                  <Input
+                    type="number"
+                    step="any"
+                    placeholder="e.g. -74.0060"
+                    value={hotel.geofenceLongitude ?? ''}
+                    onChange={(e) =>
+                      setHotel({
+                        ...hotel,
+                        geofenceLongitude: e.target.value ? parseFloat(e.target.value) : null,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <Label>Radius (meters)</Label>
+                <Input
+                  type="number"
+                  min={50}
+                  max={5000}
+                  value={hotel.geofenceRadius}
+                  onChange={(e) =>
+                    setHotel({
+                      ...hotel,
+                      geofenceRadius: parseInt(e.target.value) || 500,
+                    })
+                  }
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  50–5000 meters. Default is 500m.
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                To find your hotel&apos;s coordinates, search for it on Google Maps, right-click the
+                location, and copy the latitude and longitude.
+              </p>
             </div>
           )}
         </CardContent>

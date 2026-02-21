@@ -225,7 +225,7 @@ export class AdminService {
       if (endDate) (where.paidAt as Record<string, unknown>).lte = new Date(endDate);
     }
 
-    const [overview, tipsByRoom, tipsByDate] = await Promise.all([
+    const [overview, tipsByRoom, tipsByDate, locationVerifiedCount] = await Promise.all([
       prisma.tip.aggregate({
         where,
         _count: true,
@@ -243,6 +243,9 @@ export class AdminService {
         where,
         _count: true,
         _sum: { totalAmount: true },
+      }),
+      prisma.tip.count({
+        where: { ...where, locationVerified: true },
       }),
     ]);
 
@@ -269,6 +272,9 @@ export class AdminService {
         count: d._count,
         total: d._sum.totalAmount ?? 0,
       })),
+      locationVerifiedCount,
+      locationVerifiedPercent:
+        overview._count > 0 ? Math.round((locationVerifiedCount / overview._count) * 100) : 0,
     };
   }
 

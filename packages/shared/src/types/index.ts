@@ -73,6 +73,10 @@ export interface QrResolveResponse {
   minTip: number;
   maxTip: number;
   currency: string;
+  geofenceEnabled?: boolean;
+  geofenceLatitude?: number;
+  geofenceLongitude?: number;
+  geofenceRadius?: number;
 }
 
 export interface TipCreateRequest {
@@ -121,6 +125,8 @@ export interface AdminAnalytics {
   tipsByRoom: { roomNumber: string; count: number; total: number }[];
   tipsByStaff: { staffName: string; count: number; total: number }[];
   tipsByDate: { date: string; count: number; total: number }[];
+  locationVerifiedCount?: number;
+  locationVerifiedPercent?: number;
 }
 
 export interface MfaSetupResponse {
