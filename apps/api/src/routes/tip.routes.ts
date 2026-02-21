@@ -23,6 +23,15 @@ router.post(
   },
 );
 
+router.get('/receipt/:token', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await tipService.getReceiptByToken(req.params.token as string);
+    sendSuccess(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id/status', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await tipService.getTipStatus(req.params.id as string);
@@ -37,8 +46,8 @@ router.post(
   validate(tipReceiptSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // TODO: Send receipt email
-      sendSuccess(res, { message: 'Receipt will be sent shortly' });
+      await tipService.sendReceiptToEmail(req.params.id as string, req.body.email);
+      sendSuccess(res, { message: 'Receipt sent successfully' });
     } catch (err) {
       next(err);
     }

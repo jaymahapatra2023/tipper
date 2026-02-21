@@ -181,3 +181,19 @@ export interface StaffPayoutSummary {
   lastPayoutDate?: string;
   lastPayoutAmount?: number;
 }
+
+export interface ReceiptData {
+  tipId: string;
+  hotelName: string;
+  hotelAddress: string;
+  roomNumber: string;
+  guestName?: string;
+  totalAmount: number;
+  currency: string;
+  tipMethod: string;
+  checkInDate: string;
+  checkOutDate: string;
+  paidAt: string;
+  staffNames: string[];
+  message?: string;
+}

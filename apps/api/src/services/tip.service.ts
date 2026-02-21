@@ -1,7 +1,9 @@
+import crypto from 'crypto';
 import { prisma } from '@tipper/database';
-import type { TipCreateInput } from '@tipper/shared';
+import type { TipCreateInput, ReceiptData } from '@tipper/shared';
 import { DEFAULT_PLATFORM_FEE_PERCENT } from '@tipper/shared';
 
+import { env } from '../config/env';
 import { stripe } from '../config/stripe';
 import { emailService } from './email.service';
 import { BadRequestError, NotFoundError } from '../utils/errors';
@@ -38,6 +40,7 @@ export class TipService {
     const netAmount = input.totalAmount - platformFee;
 
     // Create tip record
+    const receiptToken = crypto.randomBytes(24).toString('hex');
     const tip = await prisma.tip.create({
       data: {
         hotelId: hotel.id,
@@ -53,6 +56,7 @@ export class TipService {
         netAmount,
         currency: hotel.currency,
         message: input.message,
+        receiptToken,
         status: 'pending',
       },
     });
@@ -86,6 +90,7 @@ export class TipService {
       clientSecret,
       amount: tip.totalAmount,
       currency: tip.currency,
+      receiptToken: tip.receiptToken,
     };
   }
 
@@ -130,6 +135,11 @@ export class TipService {
     // Notify staff of tip (non-blocking — email failure must not affect the tip)
     this.notifyStaffOfTip(tip.id).catch((err) =>
       console.error('Failed to send tip notification emails:', err),
+    );
+
+    // Send guest receipt email (non-blocking)
+    this.sendGuestReceipt(tip.id).catch((err) =>
+      console.error('Failed to send guest receipt email:', err),
     );
   }
 
@@ -225,6 +235,139 @@ export class TipService {
         console.error(`Failed to notify staff ${dist.staffMember.user.email}:`, err);
       }
     }
+  }
+  private async fetchReceiptData(tipId: string) {
+    const tip = await prisma.tip.findUnique({
+      where: { id: tipId },
+      include: {
+        hotel: { select: { name: true, address: true, city: true, state: true, zipCode: true } },
+        room: { select: { roomNumber: true } },
+        distributions: {
+          include: { staffMember: { include: { user: { select: { name: true } } } } },
+        },
+      },
+    });
+
+    if (!tip) throw new NotFoundError('Tip');
+    return tip;
+  }
+
+  private async sendGuestReceipt(tipId: string) {
+    const tip = await this.fetchReceiptData(tipId);
+
+    if (!tip.guestEmail) return;
+
+    const staffNames = tip.distributions.map((d) => d.staffMember.user.name);
+    const receiptUrl = `${env.CORS_ORIGIN}/receipt/${tip.receiptToken}`;
+
+    // Try to get Stripe receipt URL
+    let stripeReceiptUrl: string | undefined;
+    if (stripe && tip.stripePaymentIntentId) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(tip.stripePaymentIntentId, {
+          expand: ['latest_charge'],
+        });
+        const charge = pi.latest_charge;
+        if (charge && typeof charge === 'object' && 'receipt_url' in charge) {
+          stripeReceiptUrl = (charge as { receipt_url?: string | null }).receipt_url ?? undefined;
+        }
+      } catch {
+        // Non-critical — skip Stripe receipt URL
+      }
+    }
+
+    await emailService.sendGuestReceiptEmail({
+      to: tip.guestEmail,
+      guestName: tip.guestName ?? undefined,
+      hotelName: tip.hotel.name,
+      roomNumber: tip.room.roomNumber,
+      totalAmount: tip.totalAmount,
+      currency: tip.currency,
+      paidAt: tip.paidAt ?? tip.createdAt,
+      receiptUrl,
+      stripeReceiptUrl,
+      staffNames,
+    });
+
+    await prisma.tip.update({
+      where: { id: tipId },
+      data: { receiptSentAt: new Date() },
+    });
+  }
+
+  async sendReceiptToEmail(tipId: string, email: string) {
+    const tip = await this.fetchReceiptData(tipId);
+
+    const staffNames = tip.distributions.map((d) => d.staffMember.user.name);
+    const receiptUrl = `${env.CORS_ORIGIN}/receipt/${tip.receiptToken}`;
+
+    let stripeReceiptUrl: string | undefined;
+    if (stripe && tip.stripePaymentIntentId) {
+      try {
+        const pi = await stripe.paymentIntents.retrieve(tip.stripePaymentIntentId, {
+          expand: ['latest_charge'],
+        });
+        const charge = pi.latest_charge;
+        if (charge && typeof charge === 'object' && 'receipt_url' in charge) {
+          stripeReceiptUrl = (charge as { receipt_url?: string | null }).receipt_url ?? undefined;
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
+    await emailService.sendGuestReceiptEmail({
+      to: email,
+      guestName: tip.guestName ?? undefined,
+      hotelName: tip.hotel.name,
+      roomNumber: tip.room.roomNumber,
+      totalAmount: tip.totalAmount,
+      currency: tip.currency,
+      paidAt: tip.paidAt ?? tip.createdAt,
+      receiptUrl,
+      stripeReceiptUrl,
+      staffNames,
+    });
+
+    await prisma.tip.update({
+      where: { id: tip.id },
+      data: { receiptSentAt: new Date() },
+    });
+  }
+
+  async getReceiptByToken(token: string): Promise<ReceiptData> {
+    const tip = await prisma.tip.findUnique({
+      where: { receiptToken: token },
+      include: {
+        hotel: { select: { name: true, address: true, city: true, state: true, zipCode: true } },
+        room: { select: { roomNumber: true } },
+        distributions: {
+          include: { staffMember: { include: { user: { select: { name: true } } } } },
+        },
+      },
+    });
+
+    if (!tip) throw new NotFoundError('Receipt');
+
+    const hotelAddress = [tip.hotel.address, tip.hotel.city, tip.hotel.state, tip.hotel.zipCode]
+      .filter(Boolean)
+      .join(', ');
+
+    return {
+      tipId: tip.id,
+      hotelName: tip.hotel.name,
+      hotelAddress,
+      roomNumber: tip.room.roomNumber,
+      guestName: tip.guestName ?? undefined,
+      totalAmount: tip.totalAmount,
+      currency: tip.currency,
+      tipMethod: tip.tipMethod,
+      checkInDate: tip.checkInDate.toISOString(),
+      checkOutDate: tip.checkOutDate.toISOString(),
+      paidAt: (tip.paidAt ?? tip.createdAt).toISOString(),
+      staffNames: tip.distributions.map((d) => d.staffMember.user.name),
+      message: tip.message ?? undefined,
+    };
   }
 }
 

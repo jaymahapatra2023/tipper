@@ -95,6 +95,52 @@ class EmailService {
     await this.send(to, `You received a ${formatted} tip! - Tipper`, html);
   }
 
+  async sendGuestReceiptEmail(params: {
+    to: string;
+    guestName?: string;
+    hotelName: string;
+    roomNumber: string;
+    totalAmount: number;
+    currency: string;
+    paidAt: Date;
+    receiptUrl: string;
+    stripeReceiptUrl?: string;
+    staffNames?: string[];
+  }) {
+    const formatted = `$${(params.totalAmount / 100).toFixed(2)} ${params.currency.toUpperCase()}`;
+    const dateStr = params.paidAt.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    const greeting = params.guestName ? `Hi ${params.guestName},` : 'Hi,';
+    const staffLine =
+      params.staffNames && params.staffNames.length > 0
+        ? `<p style="margin:8px 0 0;color:#374151;text-align:center;font-size:14px;">Staff: ${params.staffNames.join(', ')}</p>`
+        : '';
+    const stripeLink = params.stripeReceiptUrl
+      ? `<p style="text-align:center;margin:12px 0 0;"><a href="${params.stripeReceiptUrl}" style="color:#2563eb;font-size:13px;">View Stripe Payment Receipt</a></p>`
+      : '';
+
+    const html = this.wrap(`
+      <h2 style="margin:0 0 16px;font-size:20px;color:#111827;">Your Tip Receipt</h2>
+      <p style="color:#374151;line-height:1.6;">${greeting}</p>
+      <p style="color:#374151;line-height:1.6;">Thank you for your generous tip! Here's your receipt.</p>
+      <div style="margin:20px 0;padding:20px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
+        <p style="margin:0 0 8px;font-size:28px;font-weight:700;color:#16a34a;text-align:center;">${formatted}</p>
+        <p style="margin:0;color:#374151;text-align:center;font-size:14px;">${params.hotelName} — Room ${params.roomNumber}</p>
+        <p style="margin:8px 0 0;color:#6b7280;text-align:center;font-size:13px;">${dateStr}</p>
+        ${staffLine}
+      </div>
+      <div style="text-align:center;margin:28px 0;">
+        <a href="${params.receiptUrl}" style="display:inline-block;padding:12px 32px;background:#2563eb;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px;">View Full Receipt</a>
+      </div>
+      ${stripeLink}
+      <p style="color:#6b7280;font-size:13px;">Thank you for supporting hotel staff!</p>
+    `);
+    await this.send(params.to, `Your Tip Receipt — ${formatted} - Tipper`, html);
+  }
+
   async sendWelcomeEmail(to: string, name: string, tempPassword: string) {
     const loginUrl = `${env.CORS_ORIGIN}/login`;
     const html = this.wrap(`

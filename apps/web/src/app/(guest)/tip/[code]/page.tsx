@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { CheckCircle2, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, FileText, Mail } from 'lucide-react';
 import { api } from '@/lib/api';
 import { stripePromise } from '@/lib/stripe';
 import { formatCurrency } from '@/lib/utils';
@@ -141,7 +141,11 @@ export default function TipPage() {
   const [confirmation, setConfirmation] = useState<TipConfirmation | null>(null);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
 
-  const [tipData, setTipData] = useState<{ tipId: string; amount: number } | null>(null);
+  const [tipData, setTipData] = useState<{
+    tipId: string;
+    amount: number;
+    receiptToken?: string;
+  } | null>(null);
 
   const form = useForm<TipFormData>({
     resolver: zodResolver(tipFormSchema),
@@ -196,7 +200,11 @@ export default function TipPage() {
   async function handleSubmit(data: TipFormData): Promise<string | null> {
     if (!hotelInfo) return null;
 
-    const res = await api.post<{ tipId: string; clientSecret: string | null }>('/tips', {
+    const res = await api.post<{
+      tipId: string;
+      clientSecret: string | null;
+      receiptToken?: string;
+    }>('/tips', {
       qrCode: code,
       roomId: hotelInfo.roomId,
       guestName: data.guestName || undefined,
@@ -210,7 +218,11 @@ export default function TipPage() {
     });
 
     if (res.success && res.data) {
-      setTipData({ tipId: res.data.tipId, amount: data.totalAmount });
+      setTipData({
+        tipId: res.data.tipId,
+        amount: data.totalAmount,
+        receiptToken: res.data.receiptToken ?? undefined,
+      });
       return res.data.clientSecret;
     } else {
       setError(res.error?.message || 'Failed to process tip');
@@ -325,6 +337,24 @@ export default function TipPage() {
                 </div>
               </CardContent>
             </Card>
+            {tipData?.receiptToken && (
+              <a
+                href={`/receipt/${tipData.receiptToken}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button type="button" variant="gold-outline" className="w-full">
+                  <FileText className="mr-2 h-4 w-4" />
+                  View Receipt
+                </Button>
+              </a>
+            )}
+            {form.getValues('guestEmail') && (
+              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Mail className="h-4 w-4 text-primary/70" />
+                <span>Receipt sent to {form.getValues('guestEmail')}</span>
+              </div>
+            )}
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-primary/70" />
               <span>100% goes directly to your cleaning staff</span>
@@ -359,6 +389,15 @@ export default function TipPage() {
               <div>
                 <Label htmlFor="guestName">Your Name (optional)</Label>
                 <Input id="guestName" {...form.register('guestName')} placeholder="John Doe" />
+              </div>
+              <div>
+                <Label htmlFor="guestEmail">Email for Receipt (optional)</Label>
+                <Input
+                  id="guestEmail"
+                  type="email"
+                  {...form.register('guestEmail')}
+                  placeholder="you@example.com"
+                />
               </div>
               <div>
                 <Label htmlFor="message">Message for Staff (optional)</Label>
