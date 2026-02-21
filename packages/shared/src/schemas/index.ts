@@ -282,6 +282,18 @@ export const hotelBrandingSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')
     .nullable()
     .optional(),
+  qrForegroundColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')
+    .nullable()
+    .optional(),
+  qrBackgroundColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color')
+    .nullable()
+    .optional(),
+  qrStyle: z.enum(['square', 'rounded', 'dots']).optional(),
+  qrLogoEnabled: z.boolean().optional(),
 });
 
 // Notification schemas

@@ -3,6 +3,7 @@ import archiver from 'archiver';
 import PDFDocument from 'pdfkit';
 
 import { qrService } from './qr.service';
+import type { HotelQrConfig } from './qr.service';
 
 export interface QrData {
   roomNumber: string;
@@ -12,14 +13,23 @@ export interface QrData {
 }
 
 export class QrExportService {
-  generateZip(qrData: QrData[]): PassThrough {
+  generateZip(qrData: QrData[], qrConfig?: HotelQrConfig): PassThrough {
     const stream = new PassThrough();
     const archive = archiver('zip', { zlib: { level: 9 } });
     archive.pipe(stream);
 
     const appendAll = async () => {
       for (const item of qrData) {
-        const buffer = await qrService.generateHighResBuffer(item.url);
+        let buffer: Buffer;
+        if (qrConfig?.logoEnabled && qrConfig.logoUrl) {
+          buffer = await qrService.generateHighResBufferWithLogo(
+            item.url,
+            qrConfig.colors,
+            qrConfig.logoUrl,
+          );
+        } else {
+          buffer = await qrService.generateHighResBuffer(item.url, qrConfig?.colors);
+        }
         archive.append(buffer, { name: `room-${item.roomNumber}.png` });
       }
       await archive.finalize();
@@ -30,7 +40,11 @@ export class QrExportService {
     return stream;
   }
 
-  async generatePdf(qrData: QrData[], hotelName: string): Promise<Buffer> {
+  async generatePdf(
+    qrData: QrData[],
+    hotelName: string,
+    qrConfig?: HotelQrConfig,
+  ): Promise<Buffer> {
     const COLS = 3;
     const ROWS = 4;
     const PER_PAGE = COLS * ROWS;
@@ -89,7 +103,16 @@ export class QrExportService {
         const x = MARGIN + col * cellWidth;
         const y = MARGIN + HEADER_HEIGHT + row * cellHeight;
 
-        const qrBuffer = await qrService.generateHighResBuffer(item.url);
+        let qrBuffer: Buffer;
+        if (qrConfig?.logoEnabled && qrConfig.logoUrl) {
+          qrBuffer = await qrService.generateHighResBufferWithLogo(
+            item.url,
+            qrConfig.colors,
+            qrConfig.logoUrl,
+          );
+        } else {
+          qrBuffer = await qrService.generateHighResBuffer(item.url, qrConfig?.colors);
+        }
         const qrX = x + (cellWidth - qrSize) / 2;
         doc.image(qrBuffer, qrX, y, { width: qrSize, height: qrSize });
 

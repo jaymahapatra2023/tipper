@@ -56,6 +56,9 @@ importers:
       '@tipper/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@types/sharp':
+        specifier: ^0.32.0
+        version: 0.32.0
       archiver:
         specifier: ^7.0.0
         version: 7.0.1
@@ -107,6 +110,9 @@ importers:
       qrcode:
         specifier: ^1.5.0
         version: 1.5.4
+      sharp:
+        specifier: ^0.34.5
+        version: 0.34.5
       stripe:
         specifier: ^17.0.0
         version: 17.7.0
@@ -2332,6 +2338,10 @@ packages:
 
   '@types/serve-static@2.2.0':
     resolution: {integrity: sha512-8mam4H1NHLtu7nmtalF7eyBH14QyOASmcxHhSfEoRyr0nP/YdoesEtU+uSRvMe96TW/HPTtkoKqQLl53N7UXMQ==}
+
+  '@types/sharp@0.32.0':
+    resolution: {integrity: sha512-OOi3kL+FZDnPhVzsfD37J88FNeZh6gQsGcLc95NbeURRGvmSjeXiDcyWzF2o3yh/gQAUn2uhh/e+CPCa5nwAxw==}
+    deprecated: This is a stub types definition. sharp provides its own type definitions, so you do not need this installed.
 
   '@types/uuid@9.0.8':
     resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
@@ -6173,8 +6183,7 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@img/colour@1.0.0':
-    optional: true
+  '@img/colour@1.0.0': {}
 
   '@img/sharp-darwin-arm64@0.34.5':
     optionalDependencies:
@@ -7553,6 +7562,10 @@ snapshots:
     dependencies:
       '@types/http-errors': 2.0.5
       '@types/node': 22.19.11
+
+  '@types/sharp@0.32.0':
+    dependencies:
+      sharp: 0.34.5
 
   '@types/uuid@9.0.8': {}
 
@@ -9965,7 +9978,6 @@ snapshots:
       '@img/sharp-win32-arm64': 0.34.5
       '@img/sharp-win32-ia32': 0.34.5
       '@img/sharp-win32-x64': 0.34.5
-    optional: true
 
   shebang-command@2.0.0:
     dependencies:

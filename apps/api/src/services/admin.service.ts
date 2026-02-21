@@ -554,6 +554,10 @@ export class AdminService {
         logoUrl: input.logoUrl ?? null,
         primaryColor: input.primaryColor ?? null,
         secondaryColor: input.secondaryColor ?? null,
+        qrForegroundColor: input.qrForegroundColor ?? null,
+        qrBackgroundColor: input.qrBackgroundColor ?? null,
+        ...(input.qrStyle !== undefined && { qrStyle: input.qrStyle }),
+        ...(input.qrLogoEnabled !== undefined && { qrLogoEnabled: input.qrLogoEnabled }),
       },
     });
     logAudit({

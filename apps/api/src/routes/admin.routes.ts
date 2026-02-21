@@ -295,13 +295,14 @@ router.get('/qr/download/zip', async (req: Request, res: Response, next: NextFun
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const hotel = await adminService.getHotel(req.user!.userId);
     const qrData = await qrService.getAllActiveQrCodes(hotel!.id, appUrl);
+    const qrConfig = await qrService.getHotelQrConfig(hotel!.id);
 
     res.set({
       'Content-Type': 'application/zip',
       'Content-Disposition': `attachment; filename="qr-codes-${hotel!.name.replace(/[^a-zA-Z0-9]/g, '-')}.zip"`,
     });
 
-    const stream = qrExportService.generateZip(qrData);
+    const stream = qrExportService.generateZip(qrData, qrConfig);
     stream.pipe(res);
   } catch (err) {
     next(err);
@@ -313,7 +314,8 @@ router.get('/qr/download/pdf', async (req: Request, res: Response, next: NextFun
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const hotel = await adminService.getHotel(req.user!.userId);
     const qrData = await qrService.getAllActiveQrCodes(hotel!.id, appUrl);
-    const pdfBuffer = await qrExportService.generatePdf(qrData, hotel!.name);
+    const qrConfig = await qrService.getHotelQrConfig(hotel!.id);
+    const pdfBuffer = await qrExportService.generatePdf(qrData, hotel!.name, qrConfig);
 
     res.set({
       'Content-Type': 'application/pdf',
