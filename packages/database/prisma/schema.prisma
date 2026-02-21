@@ -102,6 +102,7 @@ model Hotel {
   email               String
   website             String?
   status              HotelStatus @default(pending)
+  onboardingStep      Int         @default(0) @map("onboarding_step")
   stripeAccountId     String?     @map("stripe_account_id")
   stripeOnboarded     Boolean     @default(false) @map("stripe_onboarded")
   suggestedAmounts    Int[]       @default([500, 1000, 1500]) @map("suggested_amounts")

@@ -3,6 +3,8 @@ import type { Request, Response, NextFunction } from 'express';
 import {
   UserRole,
   hotelSettingsSchema,
+  hotelProfileSchema,
+  roomBulkGenerateSchema,
   staffCreateSchema,
   roomCreateSchema,
   assignmentCreateSchema,
@@ -41,6 +43,54 @@ router.put(
     }
   },
 );
+
+// Hotel Profile (onboarding)
+router.put(
+  '/hotel/profile',
+  validate(hotelProfileSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const hotel = await adminService.updateHotelProfile(req.user!.userId, req.body);
+      sendSuccess(res, hotel);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Bulk room generation (onboarding)
+router.post(
+  '/rooms/bulk-generate',
+  validate(roomBulkGenerateSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await adminService.bulkCreateRooms(req.user!.userId, req.body);
+      sendSuccess(res, result, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Onboarding status
+router.get('/onboarding/status', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const status = await adminService.getOnboardingStatus(req.user!.userId);
+    sendSuccess(res, status);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/onboarding/step', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { step } = req.body;
+    const hotel = await adminService.updateOnboardingStep(req.user!.userId, step);
+    sendSuccess(res, hotel);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Staff CRUD
 router.get('/staff', async (req: Request, res: Response, next: NextFunction) => {

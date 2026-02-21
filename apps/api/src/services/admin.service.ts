@@ -1,6 +1,11 @@
 import { prisma } from '@tipper/database';
 import { PASSWORD_SALT_ROUNDS, UserRole } from '@tipper/shared';
-import type { StaffCreateInput, RoomCreateInput, HotelSettingsInput } from '@tipper/shared';
+import type {
+  StaffCreateInput,
+  RoomCreateInput,
+  HotelSettingsInput,
+  HotelProfileInput,
+} from '@tipper/shared';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -326,6 +331,86 @@ export class AdminService {
     return {
       stripeAccountId: hotel.stripeAccountId,
       stripeOnboarded: hotel.stripeOnboarded,
+    };
+  }
+
+  // Hotel profile update (onboarding step 1)
+  async updateHotelProfile(userId: string, input: HotelProfileInput) {
+    const admin = await this.getHotelAdmin(userId);
+    return prisma.hotel.update({
+      where: { id: admin.hotelId },
+      data: {
+        name: input.name,
+        address: input.address,
+        city: input.city,
+        state: input.state,
+        zipCode: input.zipCode,
+        country: input.country,
+        phone: input.phone,
+        email: input.email,
+        website: input.website || null,
+      },
+    });
+  }
+
+  // Bulk room creation (onboarding step 2)
+  async bulkCreateRooms(
+    userId: string,
+    input: {
+      floor: number;
+      startRoom: number;
+      endRoom: number;
+      roomType?: string;
+      prefix?: string;
+    },
+  ) {
+    const admin = await this.getHotelAdmin(userId);
+    const rooms = [];
+    for (let num = input.startRoom; num <= input.endRoom; num++) {
+      const roomNumber = input.prefix ? `${input.prefix}${num}` : String(num);
+      rooms.push({
+        hotelId: admin.hotelId,
+        roomNumber,
+        floor: input.floor,
+        roomType: input.roomType || null,
+      });
+    }
+
+    const result = await prisma.room.createMany({
+      data: rooms,
+      skipDuplicates: true,
+    });
+
+    return { created: result.count, total: rooms.length };
+  }
+
+  // Onboarding step tracking
+  async updateOnboardingStep(userId: string, step: number) {
+    const admin = await this.getHotelAdmin(userId);
+    return prisma.hotel.update({
+      where: { id: admin.hotelId },
+      data: { onboardingStep: step },
+    });
+  }
+
+  async getOnboardingStatus(userId: string) {
+    const admin = await this.getHotelAdmin(userId);
+    const hotel = await prisma.hotel.findUnique({ where: { id: admin.hotelId } });
+    if (!hotel) throw new NotFoundError('Hotel');
+
+    const [roomCount, staffCount, qrCount] = await Promise.all([
+      prisma.room.count({ where: { hotelId: admin.hotelId, isActive: true } }),
+      prisma.staffMember.count({ where: { hotelId: admin.hotelId, isActive: true } }),
+      prisma.qrCode.count({ where: { room: { hotelId: admin.hotelId }, status: 'active' } }),
+    ]);
+
+    return {
+      step: hotel.onboardingStep,
+      hotelProfile: !!(hotel.address && hotel.city && hotel.phone),
+      roomsAdded: roomCount,
+      staffAdded: staffCount,
+      stripeConnected: hotel.stripeOnboarded,
+      qrGenerated: qrCount,
     };
   }
 

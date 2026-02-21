@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Receipt, DollarSign, TrendingUp, DoorOpen, CheckCircle, Circle } from 'lucide-react';
+import { Receipt, DollarSign, TrendingUp, DoorOpen, ArrowRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ interface HotelInfo {
   id: string;
   name: string;
   status: string;
+  onboardingStep: number;
   stripeOnboarded: boolean;
 }
 
@@ -42,57 +43,27 @@ export default function AdminDashboardPage() {
 
   if (loading) return <LoadingSpinner />;
 
-  const showSetupWizard = hotel?.status === 'pending';
+  const showSetupBanner = hotel?.status === 'pending' && (hotel?.onboardingStep ?? 0) < 5;
 
   return (
     <div className="space-y-8">
       <PageHeader title="Hotel Dashboard" description="Overview of your hotel's tipping activity" />
 
-      {showSetupWizard && (
-        <Card className="overflow-hidden border-primary/30 bg-primary/5">
-          <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
-          <CardHeader>
-            <CardTitle>Welcome! Complete your hotel setup</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {[
-                {
-                  done: (roomCount ?? 0) > 0,
-                  label: 'Add rooms',
-                  href: '/admin-rooms',
-                },
-                {
-                  done: (staffCount ?? 0) > 0,
-                  label: 'Add staff members',
-                  href: '/admin-staff',
-                },
-                {
-                  done: hotel?.stripeOnboarded ?? false,
-                  label: 'Connect Stripe to receive payments',
-                  href: '/admin-settings',
-                },
-              ].map((step) => (
-                <Link
-                  key={step.label}
-                  href={step.href}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 transition-colors hover:bg-primary/10"
-                >
-                  {step.done ? (
-                    <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-muted-foreground shrink-0" />
-                  )}
-                  <span
-                    className={step.done ? 'text-muted-foreground line-through' : 'font-medium'}
-                  >
-                    {step.label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+      {showSetupBanner && (
+        <Link href="/admin-onboarding">
+          <Card className="overflow-hidden border-primary/30 bg-primary/5 cursor-pointer transition-colors hover:bg-primary/10">
+            <div className="h-1 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
+            <CardContent className="flex items-center justify-between py-4">
+              <div>
+                <p className="font-medium">Continue Setting Up Your Hotel</p>
+                <p className="text-sm text-muted-foreground">
+                  Step {(hotel?.onboardingStep ?? 0) + 1} of 5 — pick up where you left off
+                </p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-primary shrink-0" />
+            </CardContent>
+          </Card>
+        </Link>
       )}
 
       <div className="grid gap-4 md:grid-cols-4">

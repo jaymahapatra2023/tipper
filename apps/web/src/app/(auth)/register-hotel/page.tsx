@@ -38,7 +38,7 @@ export default function RegisterHotelPage() {
       );
       if (res.success && res.data) {
         api.setToken(res.data.accessToken);
-        router.push('/admin-dashboard');
+        router.push('/admin-onboarding');
       } else {
         setError(res.error?.message || 'Registration failed');
       }

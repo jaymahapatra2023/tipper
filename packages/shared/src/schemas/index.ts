@@ -179,6 +179,37 @@ export const adminResetPasswordSchema = z.object({
   userId: z.string().uuid(),
 });
 
+// Hotel profile schema (onboarding step 1)
+export const hotelProfileSchema = z.object({
+  name: z.string().min(1, 'Hotel name is required').max(200),
+  address: z.string().min(1, 'Address is required').max(500),
+  city: z.string().min(1, 'City is required').max(100),
+  state: z.string().min(1, 'State is required').max(100),
+  zipCode: z.string().min(1, 'ZIP code is required').max(20),
+  country: z.string().min(1, 'Country is required').max(100),
+  phone: z.string().min(1, 'Phone is required').max(20),
+  email: z.string().email('Invalid email'),
+  website: z.string().url('Invalid URL').optional().or(z.literal('')),
+});
+
+// Room bulk generate schema (onboarding step 2)
+export const roomBulkGenerateSchema = z
+  .object({
+    floor: z.number().int().min(0, 'Floor must be 0 or above'),
+    startRoom: z.number().int().min(1, 'Start room is required'),
+    endRoom: z.number().int().min(1, 'End room is required'),
+    roomType: z.string().max(50).optional(),
+    prefix: z.string().max(10).optional(),
+  })
+  .refine((data) => data.endRoom >= data.startRoom, {
+    message: 'End room must be >= start room',
+    path: ['endRoom'],
+  })
+  .refine((data) => data.endRoom - data.startRoom + 1 <= 100, {
+    message: 'Maximum 100 rooms per batch',
+    path: ['endRoom'],
+  });
+
 // Type exports from schemas
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -192,3 +223,5 @@ export type AssignmentCreateInput = z.infer<typeof assignmentCreateSchema>;
 export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
 export type MfaRecoveryInput = z.infer<typeof mfaRecoverySchema>;
 export type MfaSetupVerifyInput = z.infer<typeof mfaSetupVerifySchema>;
+export type HotelProfileInput = z.infer<typeof hotelProfileSchema>;
+export type RoomBulkGenerateInput = z.infer<typeof roomBulkGenerateSchema>;
