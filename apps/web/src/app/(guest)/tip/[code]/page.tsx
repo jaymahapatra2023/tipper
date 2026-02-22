@@ -236,7 +236,7 @@ export default function TipPage() {
 
   // Persist step and selectedAmount
   useEffect(() => {
-    if (step !== 'loading' && step !== 'error') {
+    if (step === 'stayDetails' || step === 'amount') {
       try {
         localStorage.setItem(`tipper_step_${code}`, step);
       } catch {
@@ -488,9 +488,11 @@ export default function TipPage() {
         >
           <Card className="w-full max-w-md">
             <CardContent className="pt-8 pb-8 text-center space-y-3">
-              <p className="text-lg font-semibold text-destructive">{t('receiptInvalid')}</p>
-              <p className="text-sm text-muted-foreground">{error}</p>
-              <p className="text-sm text-muted-foreground">{t('receiptInvalid')}</p>
+              <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
+              <p className="text-lg font-semibold text-destructive">{error}</p>
+              <Button variant="gold-outline" onClick={() => window.location.reload()}>
+                {t('tryAgain')}
+              </Button>
             </CardContent>
           </Card>
         </motion.div>
@@ -635,6 +637,23 @@ export default function TipPage() {
     );
   }
 
+  if (step === 'payment' && !stripePromise) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-8 pb-8 text-center space-y-4">
+            <AlertTriangle className="mx-auto h-10 w-10 text-yellow-500" />
+            <p className="text-lg font-semibold">{t('paymentUnavailable')}</p>
+            <p className="text-sm text-muted-foreground">{t('paymentUnavailableHint')}</p>
+            <Button variant="gold-outline" onClick={() => setStep('amount')}>
+              {tc('back')}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (step === 'payment' && stripePromise) {
     return (
       <AnimatePresence mode="wait">
@@ -751,7 +770,7 @@ export default function TipPage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.2 }}
-            className="flex-1" // Ensure motion.div takes up space
+            className="flex-1 space-y-6"
           >
             {step === 'stayDetails' && (
               <>

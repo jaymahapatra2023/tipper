@@ -464,9 +464,12 @@
     "tipMethodFlat": "Flat",
     "stay": "Stay: {checkIn} – {checkOut}",
     "offlinePaymentMsg": "Payment requires internet. Your tip details are saved and will submit when you're back online.",
+    "paymentUnavailable": "Payment Not Available",
+    "paymentUnavailableHint": "Online payments are not configured for this hotel yet. Please contact the front desk to leave a tip.",
     "usingCachedData": "Using saved hotel data",
     "queuedForSubmission": "Tip queued — will submit when online",
-    "tipSubmitted": "Tip submitted successfully!"
+    "tipSubmitted": "Tip submitted successfully!",
+    "tryAgain": "Try Again"
   },
   "shifts": {
     "title": "Shift Scheduling",

@@ -32,7 +32,7 @@ export function HotelHero({
 
   return (
     <div
-      className="relative overflow-hidden rounded-2xl px-6 py-12 text-center ring-1 ring-gold/10"
+      className="relative overflow-hidden rounded-2xl px-6 py-6 sm:py-12 text-center ring-1 ring-gold/10"
       style={{
         background: `linear-gradient(to bottom right, ${bgFrom}, ${bgVia}, ${bgTo})`,
       }}
@@ -42,16 +42,16 @@ export function HotelHero({
       )}
       <div className="relative">
         {logoUrl ? (
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 sm:mb-4 sm:h-16 sm:w-16 items-center justify-center">
             <img
               src={logoUrl}
               alt={`${hotelName} logo`}
-              className="h-16 w-16 rounded-full object-cover ring-2 ring-white/20"
+              className="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover ring-2 ring-white/20"
             />
           </div>
         ) : (
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-gold/30 bg-gold/10">
-            <Award className="h-6 w-6 text-gold" />
+          <div className="mx-auto mb-3 flex h-10 w-10 sm:mb-4 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-gold/30 bg-gold/10">
+            <Award className="h-5 w-5 sm:h-6 sm:w-6 text-gold" />
           </div>
         )}
         <h1 className="text-2xl font-bold" style={{ color: textColor }}>

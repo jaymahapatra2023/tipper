@@ -464,9 +464,12 @@
     "tipMethodFlat": "Fijo",
     "stay": "Estadía: {checkIn} – {checkOut}",
     "offlinePaymentMsg": "El pago requiere internet. Los datos de su propina están guardados y se enviarán cuando vuelva a estar en línea.",
+    "paymentUnavailable": "Pago no disponible",
+    "paymentUnavailableHint": "Los pagos en línea aún no están configurados para este hotel. Contacte a la recepción para dejar una propina.",
     "usingCachedData": "Usando datos del hotel guardados",
     "queuedForSubmission": "Propina en cola — se enviará cuando esté en línea",
-    "tipSubmitted": "¡Propina enviada con éxito!"
+    "tipSubmitted": "¡Propina enviada con éxito!",
+    "tryAgain": "Intentar de nuevo"
   },
   "shifts": {
     "title": "Programación de Turnos",

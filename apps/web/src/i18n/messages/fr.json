@@ -464,9 +464,12 @@
     "tipMethodFlat": "Forfaitaire",
     "stay": "Séjour : {checkIn} – {checkOut}",
     "offlinePaymentMsg": "Le paiement nécessite une connexion internet. Les détails de votre pourboire sont enregistrés et seront envoyés lorsque vous serez de nouveau en ligne.",
+    "paymentUnavailable": "Paiement non disponible",
+    "paymentUnavailableHint": "Les paiements en ligne ne sont pas encore configurés pour cet hôtel. Veuillez contacter la réception pour laisser un pourboire.",
     "usingCachedData": "Utilisation des données de l'hôtel enregistrées",
     "queuedForSubmission": "Pourboire en file d'attente — sera envoyé une fois en ligne",
-    "tipSubmitted": "Pourboire envoyé avec succès !"
+    "tipSubmitted": "Pourboire envoyé avec succès !",
+    "tryAgain": "Réessayer"
   },
   "shifts": {
     "title": "Planification des quarts",

@@ -26,6 +26,7 @@ export function DatePicker({
   className,
 }: DatePickerProps) {
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const [open, setOpen] = React.useState(false);
 
   if (isMobile) {
     return (
@@ -40,7 +41,7 @@ export function DatePicker({
   }
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={'outline'}
@@ -59,7 +60,10 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={field.value}
-          onSelect={(day) => field.onChange(day)}
+          onSelect={(day) => {
+            field.onChange(day);
+            setOpen(false);
+          }}
           autoFocus
           disabled={disabled}
         />
