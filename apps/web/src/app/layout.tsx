@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Outfit, Sora } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -8,6 +8,12 @@ import './globals.css';
 
 const outfit = Outfit({ subsets: ['latin'], variable: '--font-sans' });
 const sora = Sora({ subsets: ['latin'], variable: '--font-display' });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   title: 'Tipper - Digital Tipping for Hotel Staff',

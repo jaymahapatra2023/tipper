@@ -34,7 +34,7 @@ function NotificationIcon({ type }: { type: string }) {
   return <Bell className="h-4 w-4 text-muted-foreground" />;
 }
 
-export function NotificationBell() {
+export function NotificationBell({ className }: { className?: string }) {
   const { user } = useAuth();
   const t = useTranslations('common');
   const [unreadCount, setUnreadCount] = useState(0);
@@ -104,7 +104,7 @@ export function NotificationBell() {
   if (!user) return null;
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={cn('relative', className)} ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
@@ -119,7 +119,7 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-border/60 bg-card shadow-lg">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] max-w-80 rounded-xl border border-border/60 bg-card shadow-lg">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
             <h3 className="text-sm font-semibold">{t('notifications')}</h3>
             {unreadCount > 0 && (
