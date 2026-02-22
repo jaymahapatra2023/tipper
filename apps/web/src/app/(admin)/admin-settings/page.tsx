@@ -248,7 +248,7 @@ function AdminSettingsContent() {
           <CardDescription>{t('mfaSecurityDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <span>{tc('status')}:</span>
               <Badge variant={mfaEnabled ? 'success' : 'secondary'}>
@@ -286,12 +286,13 @@ function AdminSettingsContent() {
           <CardDescription>{t('requireMfaDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium">{t('requireMfaForStaff')}</p>
               <p className="text-sm text-muted-foreground">{t('requireMfaHint')}</p>
             </div>
             <Button
+              className="w-fit shrink-0"
               variant={hotel.mfaRequired ? 'default' : 'outline'}
               onClick={() => setHotel({ ...hotel, mfaRequired: !hotel.mfaRequired })}
             >
@@ -569,9 +570,10 @@ function AdminSettingsContent() {
           <CardDescription>{t('tipPoolingDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span>{t('enableTipPooling')}</span>
             <Button
+              className="w-fit shrink-0"
               variant={hotel.poolingEnabled ? 'default' : 'outline'}
               onClick={() => setHotel({ ...hotel, poolingEnabled: !hotel.poolingEnabled })}
             >
@@ -614,9 +616,9 @@ function AdminSettingsContent() {
                     {poolPreview.map((p) => (
                       <div
                         key={p.staffMemberId}
-                        className="flex items-center justify-between px-4 py-2.5 text-sm"
+                        className="flex flex-col gap-1 px-4 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between"
                       >
-                        <span>{p.staffName}</span>
+                        <span className="truncate">{p.staffName}</span>
                         <div className="flex items-center gap-4">
                           <Badge variant="outline">{p.weight}x</Badge>
                           <span className="w-16 text-right text-muted-foreground">
@@ -656,12 +658,13 @@ function AdminSettingsContent() {
           <CardDescription>{t('staffLeaderboardDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium">{t('enableLeaderboard')}</p>
               <p className="text-sm text-muted-foreground">{t('leaderboardHint')}</p>
             </div>
             <Button
+              className="w-fit shrink-0"
               variant={hotel.leaderboardEnabled ? 'default' : 'outline'}
               onClick={() => setHotel({ ...hotel, leaderboardEnabled: !hotel.leaderboardEnabled })}
             >
@@ -669,12 +672,13 @@ function AdminSettingsContent() {
             </Button>
           </div>
           {hotel.leaderboardEnabled && (
-            <div className="flex items-center justify-between border-t pt-4">
+            <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-medium">{t('anonymizeNames')}</p>
                 <p className="text-sm text-muted-foreground">{t('anonymizeHint')}</p>
               </div>
               <Button
+                className="w-fit shrink-0"
                 variant={hotel.leaderboardAnonymized ? 'default' : 'outline'}
                 onClick={() =>
                   setHotel({ ...hotel, leaderboardAnonymized: !hotel.leaderboardAnonymized })
@@ -697,12 +701,13 @@ function AdminSettingsContent() {
           <CardDescription>{t('locationVerificationDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium">{t('enableGeofence')}</p>
               <p className="text-sm text-muted-foreground">{t('geofenceHint')}</p>
             </div>
             <Button
+              className="w-fit shrink-0"
               variant={hotel.geofenceEnabled ? 'default' : 'outline'}
               onClick={() => setHotel({ ...hotel, geofenceEnabled: !hotel.geofenceEnabled })}
             >

@@ -144,17 +144,17 @@ export default function AdminStaffPage() {
               {staff.map((s) => (
                 <div
                   key={s.id}
-                  className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
+                  className="flex flex-col gap-2 rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div>
-                    <p className="font-medium">{s.user.name}</p>
-                    <p className="text-sm text-muted-foreground">{s.user.email}</p>
+                  <div className="min-w-0">
+                    <p className="font-medium truncate">{s.user.name}</p>
+                    <p className="text-sm text-muted-foreground truncate">{s.user.email}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {isWeighted &&
                       s.isActive &&
                       (editingWeight === s.id ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <Input
                             type="number"
                             min={0.1}

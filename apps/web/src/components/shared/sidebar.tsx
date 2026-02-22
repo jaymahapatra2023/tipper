@@ -60,7 +60,7 @@ function SidebarContent({
   return (
     <div
       className={cn(
-        'flex h-full w-64 flex-col border-r',
+        'flex h-full w-64 flex-col overflow-y-auto border-r',
         hasBranding
           ? 'border-white/10'
           : 'glass-panel border-border/60 bg-gradient-to-b from-card to-slate-50/80',

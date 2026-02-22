@@ -278,16 +278,18 @@ export default function AdminShiftsPage() {
                   {onShiftNow.map((entry) => (
                     <div
                       key={entry.shiftId}
-                      className="flex items-center justify-between rounded-lg px-3 py-2 even:bg-muted/30"
+                      className="flex flex-col gap-1.5 rounded-lg px-3 py-2 even:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div>
-                        <p className="font-medium text-sm">{entry.staffName}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{entry.staffName}</p>
                         <p className="text-xs text-muted-foreground">
                           {formatTime(entry.startTime)} – {formatTime(entry.endTime)} |{' '}
                           {entry.rooms.map((r) => r.roomNumber).join(', ')}
                         </p>
                       </div>
-                      <Badge variant="success">{t('inProgress')}</Badge>
+                      <Badge variant="success" className="w-fit">
+                        {t('inProgress')}
+                      </Badge>
                     </div>
                   ))}
                 </div>
@@ -296,7 +298,7 @@ export default function AdminShiftsPage() {
           )}
 
           {/* Date nav + actions */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => navigateDate(-1)}>
                 <ChevronLeft className="h-4 w-4" />
@@ -311,7 +313,7 @@ export default function AdminShiftsPage() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" asChild>
                 <a
                   href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1'}/shifts/admin/export/ical`}
@@ -430,10 +432,10 @@ export default function AdminShiftsPage() {
                   {shifts.map((shift) => (
                     <div
                       key={shift.id}
-                      className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50"
+                      className="flex flex-col gap-2 rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
                     >
-                      <div>
-                        <p className="font-medium">{shift.staffName}</p>
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{shift.staffName}</p>
                         <p className="text-sm text-muted-foreground">
                           {formatDate(shift.startTime)} {formatTime(shift.startTime)} –{' '}
                           {formatTime(shift.endTime)}
@@ -443,7 +445,7 @@ export default function AdminShiftsPage() {
                           {shift.notes && ` | ${shift.notes}`}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {statusBadge(shift.status, t)}
                         {shift.status === 'scheduled' && (
                           <Button
@@ -493,7 +495,10 @@ export default function AdminShiftsPage() {
                 <div className="space-y-2">
                   <Label>{t('shiftsTab')}</Label>
                   {templateEntries.map((entry, i) => (
-                    <div key={i} className="flex items-center gap-2 rounded border p-2 text-sm">
+                    <div
+                      key={i}
+                      className="flex flex-wrap items-center gap-2 rounded border p-2 text-sm"
+                    >
                       <select
                         className="rounded border bg-background px-2 py-1 text-xs"
                         value={entry.staffMemberId}
@@ -640,9 +645,9 @@ export default function AdminShiftsPage() {
               <Card key={tmpl.id} className="overflow-hidden card-hover">
                 <div className="h-0.5 bg-gradient-to-r from-primary/60 via-primary to-primary/60" />
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <CardTitle className="text-base">{tmpl.name}</CardTitle>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
@@ -672,7 +677,7 @@ export default function AdminShiftsPage() {
                         key={e.id}
                         className="flex items-center gap-3 rounded px-3 py-1.5 even:bg-muted/30"
                       >
-                        <span className="w-20 capitalize font-medium">{e.dayOfWeek}</span>
+                        <span className="w-20 shrink-0 capitalize font-medium">{e.dayOfWeek}</span>
                         <span className="text-muted-foreground">
                           {String(e.startHour).padStart(2, '0')}:
                           {String(e.startMinute).padStart(2, '0')} –{' '}
@@ -685,7 +690,7 @@ export default function AdminShiftsPage() {
                   </div>
 
                   {applyingTemplateId === tmpl.id && (
-                    <div className="mt-4 flex items-end gap-3 border-t pt-4">
+                    <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-end">
                       <div>
                         <Label>{tc('startDate')}</Label>
                         <Input
@@ -733,10 +738,10 @@ export default function AdminShiftsPage() {
                 {swaps.map((swap) => (
                   <div
                     key={swap.id}
-                    className="flex items-center justify-between rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30"
+                    className="flex flex-col gap-2 rounded-lg px-4 py-3.5 transition-colors even:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
                   >
-                    <div>
-                      <p className="font-medium">{swap.requesterName}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{swap.requesterName}</p>
                       <p className="text-sm text-muted-foreground">
                         {formatDate(swap.originalShift.startTime)}{' '}
                         {formatTime(swap.originalShift.startTime)} –{' '}
@@ -751,7 +756,7 @@ export default function AdminShiftsPage() {
                         <p className="text-xs text-muted-foreground">{swap.reason}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {swap.status === 'pending' ? (
                         <>
                           <Button size="sm" onClick={() => handleReviewSwap(swap.id, 'approved')}>
